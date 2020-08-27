@@ -376,12 +376,18 @@ class Job(object):
         ####
     def _request_submit_job(self):
         user_id = get_user_id(debug=self.debug)
+        in_jupyter_prefix='/home/'
+        if in_jupyter_prefix in self.job_path: # using in jupyterlab
+            job_path_prefix = str(base64.b64decode('L1NDSURBVEEvRURJU09OL3Nkci9kcmFmdC8='))[2:-1]
+            job_path = job_path_prefix+self.job_path.split(in_jupyter_prefix)[1]
+        else:
+            job_path = self.job_path
         data = {
           'screenName': user_id[0],
           'title': self.job_title,
           'targetType': '82', # 82= HPO Job
           'workspaceName': self.workspace_name,
-          'location': self.job_path 
+          'location': job_path 
         }
         if self.debug:
             print(data)        
@@ -397,10 +403,15 @@ class Job(object):
     def _run_slurm_script(self):
         if hasattr(self, 'dejob_id'):
             user_id = get_user_id(debug=self.debug)
-            #print(user_id)
+            in_jupyter_prefix='/home/'
+            if in_jupyter_prefix in self.job_path: # using in jupyterlab
+                job_path_prefix = str(base64.b64decode('L1NDSURBVEEvRURJU09OL3Nkci9kcmFmdC8='))[2:-1]
+                job_path = job_path_prefix+self.job_path.split(in_jupyter_prefix)[1]
+            else:
+                job_path = self.job_path
             data = {
               'screenName': user_id[0],
-              'location': self.job_path
+              'location': job_path
             }
             if self.debug:
                 print(data)
@@ -408,12 +419,8 @@ class Job(object):
             response = requests.post('https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/slurm-de-job-run', data=data)
             if response.status_code == 200:
                 while True: # waiting for file io
-                    try:
-                        with open(self.job_path+os.sep+"job.id", "r") as f:
-                            self.job_id = int(f.readline())
-                        break
-                    except:
-                        pass
+                    with open(self.job_path+os.sep+"job.id", "r") as f: # load files in jupyterlab image
+                        self.job_id = int(f.readline())
                 print("The job_id is "+str(self.job_id))
                 return True
         else:
