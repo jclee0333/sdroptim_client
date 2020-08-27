@@ -927,7 +927,7 @@ def getObjectiveFunction(gui_params, indirect=False, stepwise=False, greedy=True
     temp_gui_params['algorithm'] = getAlgorithmListAccordingToResourceType(temp_gui_params['algorithm'], 'gpu')
     if len(temp_gui_params['algorithm'])>0:
         results_gpu = getObjectiveFunction_(resources='gpu', gui_params=temp_gui_params, indirect=indirect, stepwise=stepwise, greedy=greedy)
-        ObjectiveFunction_names.append('objective_gpfu')
+        ObjectiveFunction_names.append('objective_gpu')
     return results_cpu+'\n'+results_gpu, ObjectiveFunction_names
 
 def getObjectiveFunction_(resources, gui_params, indirect=False, stepwise=False, greedy=True):
