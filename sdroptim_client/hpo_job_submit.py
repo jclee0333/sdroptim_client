@@ -704,14 +704,17 @@ def get_notebook_name():
     magic = str(uuid.uuid1()).replace('-', '')
     print(magic)
     # saves it (ctrl+S)
-    display(Javascript('IPython.notebook.save_checkpoint();'))
-    nb_name = None
-    while nb_name is None:
-        try:
-            sleep(0.1)
-            nb_name = subprocess.check_output(f'grep -l {magic} *.ipynb', shell=True).decode().strip()
-        except:
-            pass
+    #display(Javascript('IPython.notebook.save_checkpoint();'))
+    # Ipython is not defined @ jupyter lab.... ....
+    #   
+    #nb_name = None
+    #while nb_name is None:
+    #    try:
+    #        sleep(0.1)
+    #        nb_name = subprocess.check_output(f'grep -l {magic} *.ipynb', shell=True).decode().strip()
+    #    except:
+    #        pass
+    nb_name = subprocess.check_output(f'ls *.ipynb', shell=True).decode().strip()
     return nb_name
 
  
