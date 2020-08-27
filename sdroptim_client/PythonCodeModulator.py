@@ -860,7 +860,7 @@ def getAlgorithmBody(gui_params, algorithm=None, r_val=None, for_hpo_tune=False,
                     results += "test_fetched = fetch_images(test_data['file_loc'], 'GRAYSCALE', 1)\n"
                 elif gui_params['ml_file_info']['image_color'] == 'RGB':
                     results += "train_fetched = fetch_images(train_data['file_loc'], 'RGB', 1)\n"
-                    results += "test_fetched = fetch_images(test_data['file_loc'], 'GRAYSCALE', 1)\n"
+                    results += "test_fetched = fetch_images(test_data['file_loc'], 'RGB', 1)\n"
                 results+="features = ['pixel_'+str(x) for x in range(train_fetched.shape[1])]\n"
                 results+='train_data = pd.concat([train_data, pd.DataFrame(train_fetched, columns=["pixel_"+str(x) for x in range(train_fetched.shape[1])], index=train_data.index)], axis=1)\n'
                 results+='test_data = pd.concat([test_data, pd.DataFrame(test_fetched, columns=["pixel_"+str(x) for x in range(test_fetched.shape[1])], index=test_data.index)], axis=1)\n'
