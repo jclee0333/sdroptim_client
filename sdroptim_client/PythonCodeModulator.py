@@ -407,7 +407,8 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     ##### mpirun command
     mpirun_command = "## mpirun command\n"
     mpirun_command+= "/usr/local/bin/mpirun -np " + str(n_tasks)
-    mpirun_options = "-x PATH -x HOROVOD_MPI_THREADS_DISABLE=1 -x NCCL_SOCKET_IFNAME=^docker0,lo -mca btl_tcp_if_exclude lo,docker0  -mca pml ob1"
+    mpirun_options = "-x TORCH_HOME=/home/"+uname+" "
+    mpirun_options+= "-x PATH -x HOROVOD_MPI_THREADS_DISABLE=1 -x NCCL_SOCKET_IFNAME=^docker0,lo -mca btl_tcp_if_exclude lo,docker0  -mca pml ob1"
     ##### singularity command
     singularity_command = "singularity exec --nv"
     user_home_mount_for_custom_enviromnent = "-H ${HOME}:"+"/home/"+uname        # final
