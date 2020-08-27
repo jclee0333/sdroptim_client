@@ -86,8 +86,14 @@ def get_default_args():
     })
     return args  
 
-def get_default_chart_html():
+def get_default_chart_html(json_file_name="", outfile_name="", outhtml_name=""):
     args=get_default_args()
+    if json_file_name:
+        args.json_file_name = json_file_name
+    if outfile_name:
+        args.outfile_name = outfile_name
+    if outhtml_name:
+        args.outhtml_name = outhtml_name
     get_chart_html(args, with_df_csv=True)
 
 if __name__ == "__main__":
