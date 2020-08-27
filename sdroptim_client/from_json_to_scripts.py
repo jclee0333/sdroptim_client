@@ -10,7 +10,8 @@ def FullscriptsGenerator(json_file_name):
     with open(json_file_name) as data_file:
         gui_params = json.load(data_file)
     #
-    prefix_generated_code = "json_file_name = "+"'"+json_file_path+json_file_number+json_file_name+"'\n"
+    #prefix_generated_code = "json_file_name = "+"'"+json_file_path+json_file_number+json_file_name+"'\n"
+    prefix_generated_code = "json_file_name = "+"'"+json_file_name+"'\n"
     #
     temp = gui_params.copy()
     #############################
