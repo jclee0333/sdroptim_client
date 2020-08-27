@@ -424,7 +424,7 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     if dejob_id:
         job_done+="-d deJobId="+str(dejob_id)
     else:
-        job_done+="-d deJobId=${deJobID}"
+        job_done+="-d deJobId=${deJobId}"
     job_done+=" -d Status=SUCCESS\n"
     results = prefix+paths+(job_init if 'n_tasks' not in gui_params['hpo_system_attr'] else "")+mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" " + running_command + "\n\n"+job_done
     # job_init can be added when gui-hpo, while jupyter-hpo exploits its own python-api _request_submit_job()
