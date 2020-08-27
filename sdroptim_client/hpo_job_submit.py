@@ -378,7 +378,7 @@ class Job(object):
         user_id = get_user_id(debug=self.debug)
         in_jupyter_prefix='/home/'
         if in_jupyter_prefix in self.job_path: # using in jupyterlab
-            job_path_prefix = str(base64.b64decode('L1NDSURBVEEvRURJU09OL3Nkci9kcmFmdC8='))[2:-1]
+            job_path_prefix = str(base64.b64decode('L0VESVNPTi9TQ0lEQVRBL3Nkci9kcmFmdC8='))[2:-1]
             job_path = job_path_prefix+self.job_path.split(in_jupyter_prefix)[1]
         else:
             job_path = self.job_path
@@ -395,7 +395,7 @@ class Job(object):
         if response.status_code == 200:            
             self.dejob_id = response.json()
             if self.debug:
-                print(self.job_id)            
+                print("dejob_id = ",self.dejob_id)            
         else:
             raise ValueError("A problem occured when generating the job.")
         return True
@@ -405,7 +405,7 @@ class Job(object):
             user_id = get_user_id(debug=self.debug)
             in_jupyter_prefix='/home/'
             if in_jupyter_prefix in self.job_path: # using in jupyterlab
-                job_path_prefix = str(base64.b64decode('L1NDSURBVEEvRURJU09OL3Nkci9kcmFmdC8='))[2:-1]
+                job_path_prefix = str(base64.b64decode('L0VESVNPTi9TQ0lEQVRBL3Nkci9kcmFmdC8='))[2:-1]
                 job_path = job_path_prefix+self.job_path.split(in_jupyter_prefix)[1]
             else:
                 job_path = self.job_path
