@@ -255,6 +255,11 @@ class Job(object):
             print("Study name: ", self.study_name)
             print("\n")
             #
+            if 'dejob_id' in gui_params['hpo_system_attr']:
+                self.dejob_id = gui_params['hpo_system_attr']['dejob_id']
+            if 'job_id' in gui_params['hpo_system_attr']:
+                self.job_id = gui_params['hpo_system_attr']['job_id']
+            #
             self.n_nodes = int(gui_params['hpo_system_attr']['n_nodes'])
             self.max_sec = int(gui_params['hpo_system_attr']['time_deadline_sec'])
             #self.greedy = True if gui_params['hpo_system_attr']['greedy']==1 else False
@@ -395,6 +400,12 @@ class Job(object):
         response = requests.post('https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-submit-de-job', data=data)
         if response.status_code == 200:            
             self.dejob_id = response.json()
+            #### update to gui_params
+            self.gui_params['hpo_system_attr'].update({'dejob_id':self.dejob_id})
+            jsonfile = json.dumps(self.gui_params)
+            with open(self.job_path+os.sep+'metadata.json', 'w') as f:
+                f.write(jsonfile)
+            ####
             if self.debug:
                 print("dejob_id = ",self.dejob_id)            
         else:
@@ -422,6 +433,12 @@ class Job(object):
                 with open(self.job_path+os.sep+"job.id", "r") as f: # load files in jupyterlab image
                     self.job_id = int(f.readline())
                 print("The job_id is "+str(self.job_id))
+                #### update to gui_params
+                self.gui_params['hpo_system_attr'].update({'job_id':self.job_id})
+                jsonfile = json.dumps(self.gui_params)
+                with open(self.job_path+os.sep+'metadata.json', 'w') as f:
+                    f.write(jsonfile)
+                ####
                 return True
         else:
             raise ValueError("Slurm Job Not Found.")            
@@ -701,8 +718,8 @@ def get_notebook_name():
     import subprocess
     import os
     import uuid
-    magic = str(uuid.uuid1()).replace('-', '')
-    print(magic)
+    #magic = str(uuid.uuid1()).replace('-', '')
+    #print(magic)
     # saves it (ctrl+S)
     #display(Javascript('IPython.notebook.save_checkpoint();'))
     # Ipython is not defined @ jupyter lab.... ....
