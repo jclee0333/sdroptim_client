@@ -5,6 +5,7 @@
   -- jclee@kisti.re.kr
 """
 from sdroptim_client.PythonCodeModulator import get_jobpath_with_attr, get_batch_script, from_userpy_to_mpipy, get_user_id
+from sdroptim_client.visualization import history_plot
 import json, requests, base64
 from subprocess import (Popen, PIPE)
 import optuna
@@ -461,7 +462,7 @@ class Job(object):
         if hasattr(self, 'job_id'):
             user_id = get_user_id(debug=self.debug)
         key = str(base64.b64decode('cG9zdGdyZXNxbDovL3Bvc3RncmVzOnBvc3RncmVzQDE1MC4xODMuMjQ3LjI0NDo1NDMyLw=='))[2:-1]
-        url = key + self.user_id[0]
+        url = key + user_id[0]
         try:
             rdbs = optuna.storages.RDBStorage(url)
             study_id = rdbs.get_study_id_from_name(self.study_name)
@@ -479,6 +480,14 @@ class Job(object):
             return s
         elif types == "dataframe":
             return s.trials_dataframe()
+
+    def plot_history(self):
+        figure = history_plot(self.get_study(), self.study_name, self.direction)
+        return figure
+    
+    def plot_parallel_coordinate(self):
+        figure = optuna.visualization.plot_parallel_coordinate(self.get_study())
+        return figure
 
     def show_logs(self, show_type='both'):
         if show_type == 'output':
