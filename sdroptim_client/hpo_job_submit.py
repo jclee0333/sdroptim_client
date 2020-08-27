@@ -499,7 +499,7 @@ class Job(object):
             return s.trials_dataframe()
 
     def plot_history(self):
-        figure = history_plot(self.get_study(), self.study_name, self.direction)
+        figure = history_plot(self.get_study_dataframe(), self.study_name, self.direction)
         return figure
     
     def plot_parallel_coordinate(self):
