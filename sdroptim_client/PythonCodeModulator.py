@@ -244,7 +244,8 @@ def from_userpy_to_mpipy(objective_name_list, userpy):
 def get_user_id(debug=False):
     user_home1 = str(base64.b64decode(b'L0VESVNPTi9TQ0lEQVRBL3Nkci9kcmFmdC8='))[2:-1]
     user_home2 = str(base64.b64decode(b'L3NjaWVuY2UtZGF0YS9zZHIvZHJhZnQv'))[2:-1]
-    user_homes = [user_home1, user_home2]
+    user_home3 = "/home/"
+    user_homes = [user_home1, user_home2, user_home3]
     cwd=os.getcwd()
     if debug:
         uname = cwd.split(os.sep)[-1]
