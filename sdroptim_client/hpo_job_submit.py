@@ -453,6 +453,39 @@ class Job(object):
         #    self.slurm_job_directory = int(idstr)
         #except:
         #    print("Slurm Job Not Found.")
+    def _get_nbname(self):
+        from notebook import notebookapp
+        import urllib
+        import json
+        import os
+        import ipykernel
+        connection_file = os.path.basename(ipykernel.get_connection_file())
+        kernel_id = connection_file.split('-', 1)[1].split('.')[0]
+        import urllib.request
+        opener = urllib.request.build_opener()
+        import os
+        user_id = get_user_id(debug=self.debug)
+        opener.addheaders = [('Authorization', 'Token '+os.environ.get('JPY_API_TOKEN'))]
+        req = opener.open('http://localhost:8888/sdr/user/'+user_id[0]+'/api/sessions')
+        raw_data = req.read()
+        data = json.loads(raw_data.decode('utf-8'))
+        for each in data:
+            if each['kernel']['id'] == kernel_id:
+                nbname = each['notebook']['name']
+        return nbname
+    def _save_this_nb_to_py(self,dest_dir="./"):
+        import subprocess
+        name= self._get_nbname(self)
+        filepath = os.getcwd()+os.sep+name
+        ipynbfilename=name
+        try:
+            #!jupyter nbconvert --to script {filepath} --output-dir={dest_dir}
+            subprocess.check_output("jupyter nbconvert --to script "+filepath+" --output-dir="+dest_dir, shell=True)
+            return dest_dir+os.sep+ipynbfilename.split(".ipynb")[0]+'.py'
+        except:
+            raise ValueError(".py cannot be generated via current notebook.")
+        return False
+
 
     def _request_to_portal_stop_job(self):
         if hasattr(self, 'job_id'):
@@ -608,7 +641,7 @@ def SubmitHPOjob(objective_or_setofobjectives, args):
             gui_params = json.load(data_file)
         jobpath = gui_params['hpo_system_attr']['job_directory']
     #######
-    gen_py_pathname=save_this_nb_to_py(dest_dir=jobpath) # should run in jupyter only
+    gen_py_pathname=self._save_this_nb_to_py(dest_dir=jobpath) # should run in jupyter only
     # 1. generates gui_params and its metadata.json
     if args.metadata_json == "": ## first try
         if args.task_name == "":
@@ -746,20 +779,6 @@ def get_notebook_name():
     #        pass
     nb_name = subprocess.check_output(f'ls *.ipynb', shell=True).decode().strip()
     return nb_name
-
- 
-def save_this_nb_to_py(dest_dir="./"):
-    import subprocess
-    name= get_notebook_name()
-    filepath = os.getcwd()+os.sep+name
-    ipynbfilename=name
-    try:
-        #!jupyter nbconvert --to script {filepath} --output-dir={dest_dir}
-        subprocess.check_output("jupyter nbconvert --to script "+filepath+" --output-dir="+dest_dir, shell=True)
-        return dest_dir+os.sep+ipynbfilename.split(".ipynb")[0]+'.py'
-    except:
-        raise ValueError(".py cannot be generated via current notebook.")
-    return False
 
 
 
