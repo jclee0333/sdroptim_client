@@ -504,20 +504,20 @@ class Job(object):
         pio.renderers.default = 'colab'
 
     def plot_history(self):
-        _plot_config_for_jupyterlab()
+        _plot_config_for_jupyterlab(self)
         figure = history_plot(self.get_study(), self.direction)
         return figure
     
     def plot_parallel_coordinate(self):
-        _plot_config_for_jupyterlab()
+        _plot_config_for_jupyterlab(self)
         figure = optuna.visualization.plot_parallel_coordinate(self.get_study())
         return figure
     def plot_param_importances(self):
-        _plot_config_for_jupyterlab()
+        _plot_config_for_jupyterlab(self)
         figure = optuna.visualization.plot_param_importances(self.get_study())
         return figure
     def plot_intermediate_value(self):
-        _plot_config_for_jupyterlab()
+        _plot_config_for_jupyterlab(self)
         figure = optuna.visualization.plot_intermediate_values(self.get_study())
         return figure
 
