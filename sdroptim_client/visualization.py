@@ -19,7 +19,7 @@ def history_plot(study, direction, chart_y_label="Optimization Score"):
             xaxis={"title": "# seconds"},
             yaxis={"title": chart_y_label + "("+("high" if direction=='maximize' else "low")+"er is better)"},
         )
-    def get_traces(df, study_name, direction):
+    def get_traces(df, direction):
         df['cum_time_to_sec'] = df['datetime_complete'].apply(lambda x: (x - df['datetime_start'].iloc[0]).seconds)
         df=df[df['state']=='COMPLETE']
         
@@ -53,7 +53,7 @@ def history_plot(study, direction, chart_y_label="Optimization Score"):
         #print(len(df),i)
         print(best_values)
         return traces, df['cum_time_to_sec'].iloc[best_idx], best_values[best_idx]
-    t1, best_time, best_value=get_traces(df, study_name, direction)
+    t1, best_time, best_value=get_traces(df, direction)
     #t2=get_traces(df2, "optuna-base")
     #return t1,t2
     figure = go.Figure(data=t1, layout=layout)
