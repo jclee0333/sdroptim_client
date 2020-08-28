@@ -3,13 +3,21 @@ import plotly.graph_objects as go
 from plotly.offline import plot as offplot
 import numpy as np
 import optuna, base64, json, argparse, easydict
-
+############################
+### render config. for jupyter lab
+#import plotly.offline as py
+#py.init_notebook_mode(connected=True)
+#import plotly.graph_objs as go
+import plotly.io as pio
+pio.renderers.default = 'colab'
+#from plotly.offline import init_notebook_mode, iplot
+############################
 def history_plot(df, study_name, direction):
     # type: (Study) -> go.Figure
     layout = go.Layout(
-            title=study_name,
+            title="Study name: "+study_name,
             xaxis={"title": "# seconds"},
-            yaxis={"title": "target score"},
+            yaxis={"title": "Target Score"},
         )
     def get_traces(df, study_name, direction):
         df['cum_time_to_sec'] = df['datetime_complete'].apply(lambda x: (x - df['datetime_start'].iloc[0]).seconds)
