@@ -51,7 +51,7 @@ def history_plot(study, direction, chart_y_label="Optimization Score"):
                       hovertext=df['number'].map(lambda x :"idx: "+str(x)))
         ]
         #print(len(df),i)
-        print(best_values)
+        #print(best_values)
         return traces, df['cum_time_to_sec'].iloc[best_idx], best_values[best_idx]
     t1, best_time, best_value=get_traces(df, direction)
     #t2=get_traces(df2, "optuna-base")
@@ -96,6 +96,8 @@ def plot_param_importances(study):
 
 
 def get_study(json_file_name):
+    import warnings
+    warnings.filterwarnings(action='ignore')
     with open(json_file_name) as data_file:
         gui_params = json.load(data_file)
     key = str(base64.b64decode('cG9zdGdyZXNxbDovL3Bvc3RncmVzOnBvc3RncmVzQDE1MC4xODMuMjQ3LjI0NDo1NDMyLw=='))[2:-1]
@@ -115,6 +117,7 @@ def get_study(json_file_name):
     except:
         direction='maximize'
         s = optuna.create_study(load_if_exists=True, study_name=study_name, storage=url, direction=direction)
+    warnings.filterwarnings(action='default')
     return s, study_name, direction
 
 
