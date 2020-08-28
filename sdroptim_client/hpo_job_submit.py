@@ -475,7 +475,7 @@ class Job(object):
         return nbname
     def _save_this_nb_to_py(self,dest_dir="./"):
         import subprocess
-        name= self._get_nbname(self)
+        name= self._get_nbname()
         filepath = os.getcwd()+os.sep+name
         ipynbfilename=name
         try:
