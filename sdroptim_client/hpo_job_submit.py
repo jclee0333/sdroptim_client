@@ -7,6 +7,7 @@
 from sdroptim_client.PythonCodeModulator import get_jobpath_with_attr, get_batch_script, from_userpy_to_mpipy, get_user_id
 from sdroptim_client.visualization import history_plot
 import json, requests, base64
+import plotly.io as pio # for jupyterlab rendering
 from subprocess import (Popen, PIPE)
 import optuna
 
@@ -203,6 +204,7 @@ class Job(object):
                  debug=False):
         # default setting
         self.debug=True if debug else False
+        pio.renderers.default = 'colab'
         #
         if not gui_params:
             gui_params = {'kernel':'Python','task':task_name, 'algorithm':[algorithm],'hpo_system_attr':{}} # set default 
@@ -499,25 +501,19 @@ class Job(object):
         elif types == "dataframe":
             return s.trials_dataframe()
 
-    def _plot_config_for_jupyterlab(self):
-        import plotly.io as pio
-        pio.renderers.default = 'colab'
-
     def plot_history(self):
-        _plot_config_for_jupyterlab(self)
         figure = history_plot(self.get_study(), self.direction)
         return figure
     
     def plot_parallel_coordinate(self):
-        _plot_config_for_jupyterlab(self)
         figure = optuna.visualization.plot_parallel_coordinate(self.get_study())
         return figure
+
     def plot_param_importances(self):
-        _plot_config_for_jupyterlab(self)
         figure = optuna.visualization.plot_param_importances(self.get_study())
         return figure
+
     def plot_intermediate_value(self):
-        _plot_config_for_jupyterlab(self)
         figure = optuna.visualization.plot_intermediate_values(self.get_study())
         return figure
 
