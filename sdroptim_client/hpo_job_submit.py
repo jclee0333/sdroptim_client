@@ -472,7 +472,7 @@ class Job(object):
     def get_study_dataframe(self):
         df = self._get_study_object(types = "dataframe")
         self.df = df
-        print("Current study dataframe can be founded at '{job}.df'")
+        #print("Current study dataframe can be founded at '{job}.df'")
         return df
 
     def _get_study_object(self, types):
