@@ -12,12 +12,12 @@ import plotly.io as pio
 pio.renderers.default = 'colab'
 #from plotly.offline import init_notebook_mode, iplot
 ############################
-def history_plot(df, study_name, direction):
-    # type: (Study) -> go.Figure
+def history_plot(study, direction, chart_y_label="Optimization Score"):
+    df=study.trials_dataframe()
     layout = go.Layout(
-            title="Study name: "+study_name,
+            title="Optimization History by time",
             xaxis={"title": "# seconds"},
-            yaxis={"title": "Target Score"},
+            yaxis={"title": chart_y_label + "("+("high" if direction=='maximize' else "low")+"er is better)"},
         )
     def get_traces(df, study_name, direction):
         df['cum_time_to_sec'] = df['datetime_complete'].apply(lambda x: (x - df['datetime_start'].iloc[0]).seconds)
@@ -30,11 +30,13 @@ def history_plot(df, study_name, direction):
             for i in range(len(df)):
                 cur_max = max(cur_max, df['value'].iloc[i])
                 best_values.append(cur_max)
+            best_idx = best_values.index(max(best_values))
         elif direction == 'minimize':
             cur_min = float("inf")
             for i in range(len(df)):
                 cur_min = min(cur_min, df['value'].iloc[i])
                 best_values.append(cur_min)
+            best_idx = best_values.index(min(best_values))
         #
         traces = [
             go.Scatter(
@@ -42,18 +44,58 @@ def history_plot(df, study_name, direction):
                 y=df['value'],
                 mode="markers",
                 marker=dict(size=3),
-                name="Individual Score",
+                name="Score",
+                #hovertext=df['number'].map(lambda x :"idx: "+str(x))
             ),
-            go.Scatter(x=df['cum_time_to_sec'], y=best_values, name="Cummulative Score", mode='lines+markers'),
+            go.Scatter(x=df['cum_time_to_sec'], y=best_values, name="Best Score", mode='lines+markers',
+                      hovertext=df['number'].map(lambda x :"idx: "+str(x)))
         ]
-        return traces
-    t1=get_traces(df, study_name, direction)
+        #print(len(df),i)
+        print(best_values)
+        return traces, df['cum_time_to_sec'].iloc[best_idx], best_values[best_idx]
+    t1, best_time, best_value=get_traces(df, study_name, direction)
     #t2=get_traces(df2, "optuna-base")
     #return t1,t2
     figure = go.Figure(data=t1, layout=layout)
+    figure.update_layout(showlegend=False,
+                        annotations=[
+                            dict(
+        x=best_time,
+        y=best_value,
+        xref="x",
+        yref="y",
+        text=str(best_time)+"s, "+str(best_value),
+        showarrow=True,
+        font=dict(
+            family="Courier New, monospace",
+            size=16,
+            color="#ffffff"
+            ),
+        align="center",
+        arrowhead=2,
+        arrowsize=1,
+        arrowwidth=2,
+        arrowcolor="#636363",
+        ax=20,
+        ay=-30,
+        bordercolor="#c7c7c7",
+        borderwidth=2,
+        borderpad=4,
+        bgcolor="#ff7f0e",
+        opacity=0.8)
+                        ])
     return figure
 
-def get_study_df(json_file_name):
+def plot_param_importances(study):
+    figure = optuna.visualization.plot_param_importances(study)
+    return figure
+#def plot_intermediate_value(self):
+#    _plot_config_for_jupyterlab()
+#    figure = optuna.visualization.plot_intermediate_values(self.get_study())
+#    return figure
+
+
+def get_study(json_file_name):
     with open(json_file_name) as data_file:
         gui_params = json.load(data_file)
     key = str(base64.b64decode('cG9zdGdyZXNxbDovL3Bvc3RncmVzOnBvc3RncmVzQDE1MC4xODMuMjQ3LjI0NDo1NDMyLw=='))[2:-1]
@@ -73,17 +115,35 @@ def get_study_df(json_file_name):
     except:
         direction='maximize'
         s = optuna.create_study(load_if_exists=True, study_name=study_name, storage=url, direction=direction)
-    return s.trials_dataframe(), study_name, direction
+    return s, study_name, direction
 
 
 def get_chart_html(args, with_df_csv=False):
-    df, study_name, direction = get_study_df(args.json_file_name)
-    figure = history_plot(df, study_name, direction)
+    study, study_name, direction = get_study(args.json_file_name)
+    df = study.trials_dataframe()
+    with open(args.json_file_name, 'r') as data_file:
+        gui_params = json.load(data_file)
+    chart_y_label = "Optimization Score"
+    if 'job_from' in gui_params['hpo_system_attr']:
+        if gui_params['hpo_system_attr']['job_from']=='webgui':
+            if gui_params['task']=='Classification':
+                chart_y_label = 'avg. F1 score'
+            elif gui_params['task']=='Regression':
+                chart_y_label = 'R2 score'
+        elif gui_params['hpo_system_attr']['job_from']=='jupyterlab':
+            pass
+    #
     if not args.outfile_name:
         args.outfile_name = study_name+"_df.csv"
     if with_df_csv:
         df.to_csv(args.outfile_name)
-    offplot(figure, filename = args.outhtml_name, auto_open=False)
+    #
+    history_figure = history_plot(study, direction, chart_y_label)
+    offplot(history_figure, filename = args.outhtml_name, auto_open=False)
+    #
+    paramimportance_figure = plot_param_importances(study, direction, chart_y_label)
+    offplot(paramimportance_figure, filename = "param_importance_chart.html", auto_open=False)
+
 
 def get_default_args():
     args = easydict.EasyDict({

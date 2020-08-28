@@ -229,6 +229,7 @@ class Job(object):
             gui_params['hpo_system_attr'].update({"job_directory":self.job_directory})
             self.job_title = job_title
             gui_params['hpo_system_attr'].update({"job_name":self.job_title})
+            gui_params['hpo_system_attr'].update({"job_from":"jupyterlab"})
             #
             print("Job path: ", self.job_path)
             print("Workspace name: ", self.workspace_name)
@@ -498,12 +499,26 @@ class Job(object):
         elif types == "dataframe":
             return s.trials_dataframe()
 
+    def _plot_config_for_jupyterlab(self):
+        import plotly.io as pio
+        pio.renderers.default = 'colab'
+
     def plot_history(self):
-        figure = history_plot(self.get_study_dataframe(), self.study_name, self.direction)
+        _plot_config_for_jupyterlab()
+        figure = history_plot(self.get_study(), self.direction)
         return figure
     
     def plot_parallel_coordinate(self):
+        _plot_config_for_jupyterlab()
         figure = optuna.visualization.plot_parallel_coordinate(self.get_study())
+        return figure
+    def plot_param_importances(self):
+        _plot_config_for_jupyterlab()
+        figure = optuna.visualization.plot_param_importances(self.get_study())
+        return figure
+    def plot_intermediate_value(self):
+        _plot_config_for_jupyterlab()
+        figure = optuna.visualization.plot_intermediate_values(self.get_study())
         return figure
 
     def show_logs(self, show_type='both'):
