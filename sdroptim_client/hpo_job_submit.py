@@ -370,7 +370,7 @@ class Job(object):
         gen_py_pathname = self._save_this_nb_to_py(dest_dir=self.job_path)
         if gen_py_pathname:
             print("This notebook has been copied as a python file(.py) successively.")
-        generated_code = generate_mpipy(objective_name=objective.__name__, userpy=gen_py_pathname, postfunc=mod_func_stepwise)
+        generated_code = generate_mpipy(objective_name=objective.__name__, userpy=gen_py_pathname, postfunc=mod_func_stepwise, target_path=self.job_path)
         with open(self.job_path+os.sep+self.job_title+'_generated.py', 'w') as f:
             f.write(generated_code)
         if generated_code:
@@ -608,7 +608,7 @@ class Job(object):
 #####################################
 #####################################
 
-def generate_mpipy(objective_name, userpy, postfunc=""):
+def generate_mpipy(objective_name, userpy, postfunc="", target_path):
     import ast, astunparse
     try:
         with open(userpy) as f:
@@ -622,10 +622,8 @@ def generate_mpipy(objective_name, userpy, postfunc=""):
         body ='if __name__ == "__main__":\n'
         body+='    import optuna\n'
         body+='    import sdroptim\n'
-        body+='    import os\n'
-        body+='    jobdir = os.getenv("JOBDIR")\n'
-        body+='    stepwise, task_and_algorithm = sdroptim.check_stepwise_available(jobdir+os.sep+"metadata.json")\n'
-        body+='    args = sdroptim.get_argparse(automl=True, json_file_name=jobdir+os.sep+"metadata.json")\n'
+        body+='    stepwise, task_and_algorithm = sdroptim.check_stepwise_available('+target_path+'+os.sep+"metadata.json")\n'
+        body+='    args = sdroptim.get_argparse(automl=True, json_file_name='+target_path+'+os.sep+"metadata.json")\n'
         #
         post ='    if stepwise:\n'
         post+='        sdroptim.stepwise_mpi_time('+objective_name+', args, task_and_algorithm)\n'

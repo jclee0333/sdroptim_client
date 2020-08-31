@@ -385,11 +385,7 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     prefix+='#SBATCH --exclusive\n'
     paths = 'HOME=/EDISON/SCIDATA/sdr/draft/'+uname+'\n'
     jobdir= 'JOBDIR=/home/'+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'\n' # path in singularity image (after mounting)
-    ldlibpath='export LD_LIBRARY_PATH=/.singularity.d/libs:$LD_LIBRARY_PATH'
-    otherpath='export JOBDIR=${JOBDIR}'
     paths += jobdir
-    paths += ldlibpath
-    paths += otherpath
     #
     types = "scripts" if 'env_name' in gui_params['hpo_system_attr'] else "python"
     #
@@ -414,7 +410,7 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     mpirun_command = "## mpirun command\n"
     mpirun_command+= "/usr/local/bin/mpirun -np " + str(n_tasks)
     mpirun_options = "-x TORCH_HOME=/home/"+uname+" "
-    mpirun_options+= "-x PATH -x LD_LIBRARY_PATH -x JOBDIR -x HOROVOD_MPI_THREADS_DISABLE=1 -x NCCL_SOCKET_IFNAME=^docker0,lo -mca btl_tcp_if_exclude lo,docker0  -mca pml ob1"
+    mpirun_options+= "-x PATH -x HOROVOD_MPI_THREADS_DISABLE=1 -x NCCL_SOCKET_IFNAME=^docker0,lo -mca btl_tcp_if_exclude lo,docker0  -mca pml ob1"
     ##### singularity command
     singularity_command = "singularity exec --nv"
     user_home_mount_for_custom_enviromnent = "-H ${HOME}:"+"/home/"+uname        # final
@@ -562,11 +558,9 @@ def getHPOMainFunction(gui_params, ObjectiveFunction_names): # 입력 시간 등
 if __name__ == "__main__":
     import optuna
     import sdroptim
-    import os
-    jobdir = os.getenv("JOBDIR")
     #
-    stepwise, task_and_algorithm = sdroptim.check_stepwise_available(jobdir+os.sep+json_file_name)
-    args = sdroptim.get_argparse(automl=True, json_file_name=jobdir+os.sep+json_file_name)
+    stepwise, task_and_algorithm = sdroptim.check_stepwise_available(json_file_name)
+    args = sdroptim.get_argparse(automl=True, json_file_name=json_file_name)
     #
 '''
     if len(ObjectiveFunction_names)==1:
