@@ -622,8 +622,8 @@ def generate_mpipy(objective_name, userpy, target_path, postfunc=""):
         body ='if __name__ == "__main__":\n'
         body+='    import optuna\n'
         body+='    import sdroptim\n'
-        body+='    stepwise, task_and_algorithm = sdroptim.check_stepwise_available('+target_path+'+os.sep+"metadata.json")\n'
-        body+='    args = sdroptim.get_argparse(automl=True, json_file_name='+target_path+'+os.sep+"metadata.json")\n'
+        body+='    stepwise, task_and_algorithm = sdroptim.check_stepwise_available("'+target_path+'"+os.sep+"metadata.json")\n'
+        body+='    args = sdroptim.get_argparse(automl=True, json_file_name="'+target_path+'"+os.sep+"metadata.json")\n'
         #
         post ='    if stepwise:\n'
         post+='        sdroptim.stepwise_mpi_time('+objective_name+', args, task_and_algorithm)\n'
