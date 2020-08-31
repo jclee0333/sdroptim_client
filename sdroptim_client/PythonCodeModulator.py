@@ -226,8 +226,10 @@ def from_userpy_to_mpipy(objective_name_list, userpy):
     body ='if __name__ == "__main__":\n'
     body+='    import optuna\n'
     body+='    import sdroptim\n'
-    body+='    stepwise, task_and_algorithm = sdroptim.check_stepwise_available("metadata.json")\n'
-    body+='    args = sdroptim.get_argparse(automl=True, json_file_name="metadata.json")\n'
+    body+='    import os\n'
+    bodt+='    jobdir = os.getenv("JOBDIR")\n'
+    body+='    stepwise, task_and_algorithm = sdroptim.check_stepwise_available(jobdir+os.sep+"metadata.json")\n'
+    body+='    args = sdroptim.get_argparse(automl=True, json_file_name=jobdir+os.sep+"metadata.json")\n'
     #
     if args.task_type == 'both':
         post ='    if stepwise:\n'
