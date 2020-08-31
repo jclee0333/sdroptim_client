@@ -558,9 +558,11 @@ def getHPOMainFunction(gui_params, ObjectiveFunction_names): # 입력 시간 등
 if __name__ == "__main__":
     import optuna
     import sdroptim
+    import os
+    jobdir = os.getenv("JOBDIR")
     #
-    stepwise, task_and_algorithm = sdroptim.check_stepwise_available(json_file_name)
-    args = sdroptim.get_argparse(automl=True, json_file_name=json_file_name)
+    stepwise, task_and_algorithm = sdroptim.check_stepwise_available(jobdir+os.sep+json_file_name)
+    args = sdroptim.get_argparse(automl=True, json_file_name=jobdir+os.sep+json_file_name)
     #
 '''
     if len(ObjectiveFunction_names)==1:
