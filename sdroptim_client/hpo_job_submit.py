@@ -80,6 +80,9 @@ def check_stepwisefunc(objective):
             else:
                 return False
 
+def set_params(objective, params=None):
+    res= override_objfunc_with_newparams(objective, params)
+    return res
 
 def override_objfunc_with_newparams(objective, params=None):
     '''
