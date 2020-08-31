@@ -60,9 +60,10 @@ def get_params(objective):
                 for x in cate_items[1:-1].split(','):
                     tmp=x.strip().replace("'","")
                     if is_digit(tmp):
-                        tmp = float(tmp)
                         if tmp.isdigit(): # for integer
                             tmp = int(tmp)
+                        else:
+                            tmp = float(tmp)
                     new_cate_items.append(tmp)
                 cate_items=new_cate_items
                 d.update({target_name:{"choices":cate_items}})
