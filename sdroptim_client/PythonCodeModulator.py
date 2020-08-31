@@ -385,9 +385,11 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     prefix+='#SBATCH --exclusive\n'
     paths = 'HOME=/EDISON/SCIDATA/sdr/draft/'+uname+'\n'
     jobdir= 'JOBDIR=/home/'+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'\n' # path in singularity image (after mounting)
-    ldlibpath='LD_LIBRARY_PATH=/.singularity.d/libs:$LD_LIBRARY_PATH'
+    ldlibpath='export LD_LIBRARY_PATH=/.singularity.d/libs:$LD_LIBRARY_PATH'
+    otherpath='export JOBDIR=${JOBDIR}'
     paths += jobdir
     paths += ldlibpath
+    paths += otherpath
     #
     types = "scripts" if 'env_name' in gui_params['hpo_system_attr'] else "python"
     #
