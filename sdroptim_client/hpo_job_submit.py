@@ -370,7 +370,7 @@ class Job(object):
         gen_py_pathname = self._save_this_nb_to_py(dest_dir=self.job_path)
         if gen_py_pathname:
             print("This notebook has been copied as a python file(.py) successively.")
-        generated_code = generate_mpipy(objective_name=objective.__name__, userpy=gen_py_pathname, postfunc=mod_func_stepwise, target_path=self.job_path)
+        generated_code = generate_mpipy(objective_name=objective.__name__, userpy=gen_py_pathname, target_path=self.job_path, postfunc=mod_func_stepwise)
         with open(self.job_path+os.sep+self.job_title+'_generated.py', 'w') as f:
             f.write(generated_code)
         if generated_code:
@@ -608,7 +608,7 @@ class Job(object):
 #####################################
 #####################################
 
-def generate_mpipy(objective_name, userpy, postfunc="", target_path):
+def generate_mpipy(objective_name, userpy, target_path, postfunc=""):
     import ast, astunparse
     try:
         with open(userpy) as f:
