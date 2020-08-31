@@ -65,7 +65,6 @@ def get_params(objective):
                             tmp = int(tmp)
                     new_cate_items.append(tmp)
                 cate_items=new_cate_items
-                cate_items=[x.strip().replace("'","") for x in cate_items[1:-1].split(',')]
                 d.update({target_name:{"choices":cate_items}})
                 #print(cate_items)
             else:
