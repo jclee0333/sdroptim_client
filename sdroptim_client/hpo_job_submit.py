@@ -171,8 +171,8 @@ def override_objfunc_with_newparams(objective, params=None):
     return results
 #####################################
 #####################################
-def create_hpojob(study_name=None, workspace_name=None, job_directory=None, debug=False):
-    return Job(study_name=study_name, workspace_name=workspace_name, job_directory=job_directory, debug=debug)
+def create_hpojob(study_name=None, workspace_name=None, job_directory=None, env_name=None, debug=False):
+    return Job(study_name=study_name, workspace_name=workspace_name, job_directory=job_directory, env_name=env_name, debug=debug)
 
 def load_hpojob(workspace_name=None, job_directory=None, debug=False):
     uname, each = get_user_id(debug=debug)
