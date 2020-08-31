@@ -24,6 +24,13 @@ def get_params(objective):
      'RF_max_features': {'low': 0.081, 'high': 0.867},
      'RF_min_samples_leaf': {'low': 0.009, 'high': 0.453}}
     '''
+    def is_digit(str):
+        try:
+            tmp=float(str)
+            return True
+        except ValueError:
+            return False
+    #
     import inspect, ast,astunparse
     objective_strings=inspect.getsource(objective)
     p = ast.parse(objective_strings)
@@ -48,6 +55,16 @@ def get_params(objective):
                 cate_from_index=target.index('[')
                 cate_to_index=target.index(']')
                 cate_items=target[cate_from_index:cate_to_index+1].replace('"',"").replace("'","")
+                #cate_items=[x.strip().replace("'","") for x in cate_items[1:-1].split(',')] # old
+                new_cate_items=[]
+                for x in cate_items[1:-1].split(','):
+                    tmp=x.strip().replace("'","")
+                    if is_digit(tmp):
+                        tmp = float(tmp)
+                        if tmp.isdigit(): # for integer
+                            tmp = int(tmp)
+                    new_cate_items.append(tmp)
+                cate_items=new_cate_items
                 cate_items=[x.strip().replace("'","") for x in cate_items[1:-1].split(',')]
                 d.update({target_name:{"choices":cate_items}})
                 #print(cate_items)
