@@ -334,9 +334,9 @@ class Job(object):
                 if mod_func_stepwise:
                     print("The objective function has been overrided for using the stepwise strategy.")
         if self.debug:
-            copied = copy_all_files_to_jobpath(cur_dir=os.getcwd(), dest_dir=self.job_path, by='copy')
+            copied = copy_all_files_to_jobpath(cur_dir=os.getcwd(), dest_dir=self.job_path, by='symlink')
         else:
-            copied = copy_all_files_to_jobpath(cur_dir=os.getcwd(), dest_dir=self.job_path, by='copy')
+            copied = copy_all_files_to_jobpath(cur_dir=os.getcwd(), dest_dir=self.job_path, by='symlink')
             ##copied = copy_all_files_to_jobpath(cur_dir=os.getcwd(), dest_dir=self.job_path, by='symlink')
             #user_id = get_user_id(debug=self.debug)
             #__ = self.job_path.split(user_id[0])
@@ -720,11 +720,36 @@ def generates_metadata_json(args, dest_dir):
 ############################################################################
 #######
 # file exists error need to be handled
+#def copy_all_files_to_jobpath(cur_dir, dest_dir, by='symlink'):
+#    if by == 'symlink':
+#        for item in os.listdir(cur_dir):
+#            try:
+#                os.symlink(cur_dir+os.sep+item, dest_dir+os.sep+item)
+#                return True
+#            except:
+#                raise ValueError("Symlinks cannot be generated.")
+#    elif by == 'copy':
+#        try:
+#            copytree(cur_dir, dest_dir)
+#            return True
+#        except:
+#            raise ValueError("Files cannot be copied.")
 def copy_all_files_to_jobpath(cur_dir, dest_dir, by='symlink'):
     if by == 'symlink':
+        cur_list = cur_dir.split('/')
+        dest_list = dest_dir.split('/')
+        same_index = 0
+        for i in range(min(len(cur_list), len(dest_list))):
+            if cur_list[i]==dest_list[i]:
+                same_index+=1
+        cur_index=len(cur_list)-same_index
+        dest_index=len(dest_list)-same_index
+        temp = "../"
+        temp = temp*cur_index
+        relative_dest_dir = temp+"/".join(dest_list[-dest_index:])
         for item in os.listdir(cur_dir):
             try:
-                os.symlink(cur_dir+os.sep+item, dest_dir+os.sep+item)
+                os.symlink(item, relative_dest_dir+os.sep+item)
                 return True
             except:
                 raise ValueError("Symlinks cannot be generated.")
@@ -733,7 +758,7 @@ def copy_all_files_to_jobpath(cur_dir, dest_dir, by='symlink'):
             copytree(cur_dir, dest_dir)
             return True
         except:
-            raise ValueError("Files cannot be copied.")
+            raise ValueError("Files cannot be copied.")    
 
 ######################################
 #
