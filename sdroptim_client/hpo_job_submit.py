@@ -156,7 +156,8 @@ def override_objfunc_with_newparams(objective, params=None):
                     mod_target=', '.join(["'"+target_name+"'",str(targets[1]),str(targets[2])])
                     lines[i]=(lines[i][:from_index+1]+mod_target+")")
                     # d is current params
-    prefix="global "+node.name+'\n'
+    #prefix="global "+node.name+'\n'
+    prefix=""
     new_string = '\n'.join([x for x in lines if x is not ''])
     results = prefix+new_string
     p2=ast.parse(results)
