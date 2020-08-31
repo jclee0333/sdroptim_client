@@ -385,7 +385,9 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     prefix+='#SBATCH --exclusive\n'
     paths = 'HOME=/EDISON/SCIDATA/sdr/draft/'+uname+'\n'
     jobdir= 'JOBDIR=/home/'+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'\n' # path in singularity image (after mounting)
+    ldlibpath='LD_LIBRARY_PATH=/.singularity.d/libs:$LD_LIBRARY_PATH'
     paths += jobdir
+    paths += ldlibpath
     #
     types = "scripts" if 'env_name' in gui_params['hpo_system_attr'] else "python"
     #
@@ -417,7 +419,7 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     #user_home_mount_for_custom_enviromnent = "-H /home/"+uname+":"+"/home/"+uname  # my custom
     user_jobdir_mount = ""#"-B ${JOBDIR}:${JOBDIR}"                               # final
     #user_jobdir_mount = "-B /home/jclee/automl_jclee:/${JOBDIR}"                 # my custom
-    singularity_image = "/EDISON/SCIDATA/singularity-images/userenv3"
+    singularity_image = "/EDISON/SCIDATA/singularity-images/userenv.simg"
     running_command = ("python ${JOBDIR}/"+job_title+"_generated"+".py") if types == "python" else ("/bin/bash ${JOBDIR}/"+job_title+"_running_with_custom_env.sh")
     ## JOB done @ portal
     job_done = "## JOB done @ portal\n"
