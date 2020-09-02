@@ -43,36 +43,49 @@ def get_params(objective):
     #    
     d = {}
     lines=pre.split("\n")
+    stepwise=False
     for i in range(0,len(lines)):
+        if node.name in lines[i]:
+            from_index=lines[i].index('(')
+            if 'params' in lines[i]:
+                stepwise = True
         if 'trial.suggest_' in lines[i]:
             from_index=lines[i].index('(')
             to_index=lines[i].rindex(')') #last index
             target = lines[i][from_index+1:to_index]
             target.replace("'","").replace('"',"")
-            targets=[x.replace(' ',"").replace('(',"").replace(')',"") for x in target.split(',')]
-            target_name = targets[0].replace("'","")
+            #targets=[x.replace(' ',"").replace('(',"").replace(')',"") for x in target.split(',')]
+            targets=[x for x in target.split(',')]
+            #print(targets)
+            #target_name = targets[0].replace("'","")
+            target_name = targets[0]
             if 'trial.suggest_categorical' in lines[i]:
-                cate_from_index=target.index('[')
-                cate_to_index=target.index(']')
-                cate_items=target[cate_from_index:cate_to_index+1].replace('"',"").replace("'","")
-                #cate_items=[x.strip().replace("'","") for x in cate_items[1:-1].split(',')] # old
-                new_cate_items=[]
-                for x in cate_items[1:-1].split(','):
-                    tmp=x.strip().replace("'","")
-                    if is_digit(tmp):
-                        if tmp.isdigit(): # for integer
-                            tmp = int(tmp)
-                        else:
-                            tmp = float(tmp)
-                    new_cate_items.append(tmp)
-                cate_items=new_cate_items
-                d.update({target_name:{"choices":cate_items}})
-                #print(cate_items)
-            else:
-                if 'suggest_int' in lines[i]:
-                    d.update({target_name:{"low":int(targets[1]),"high":int(targets[2])}})
+                if stepwise:
+                    d.update({target_name:{"choices":targets[1]}})
                 else:
-                    d.update({target_name:{"low":float(targets[1]),"high":float(targets[2])}})
+                    cate_from_index=target.index('[')
+                    cate_to_index=target.index(']')
+                    cate_items=target[cate_from_index:cate_to_index+1].replace('"',"").replace("'","")
+                    #cate_items=[x.strip().replace("'","") for x in cate_items[1:-1].split(',')] # old
+                    new_cate_items=[]
+                    for x in cate_items[1:-1].split(','):
+                        tmp=x.strip().replace("'","")
+                        if is_digit(tmp):
+                            if tmp.isdigit(): # for integer
+                                tmp = int(tmp)
+                            else:
+                                tmp = float(tmp)
+                        new_cate_items.append(tmp)
+                    cate_items=new_cate_items
+                    d.update({target_name:{"choices":cate_items}})
+            else:
+                if stepwise:
+                    d.update({target_name:{"low":targets[1],"high":targets[2]}})
+                else:
+                    if 'suggest_int' in lines[i]:
+                        d.update({target_name:{"low":int(targets[1]),"high":int(targets[2])}})
+                    else:
+                        d.update({target_name:{"low":float(targets[1]),"high":float(targets[2])}})
     return d
 
 ####################################
@@ -98,10 +111,6 @@ def check_stepwisefunc(objective):
                 return False
 
 def set_params(objective, params=None):
-    res= override_objfunc_with_newparams(objective, params)
-    return res
-
-def override_objfunc_with_newparams(objective, params=None):
     '''
     override_objfunc_with_newparams
     e.g)
@@ -127,56 +136,71 @@ def override_objfunc_with_newparams(objective, params=None):
     
     pre = astunparse.unparse(p)
     #    
-    d = {}
+    #d = {}
     lines=pre.split("\n")
     for i in range(0,len(lines)):
-        if stepwise:
-            if node.name in lines[i]:
-                from_index=lines[i].index('(')
-                if 'params' in lines[i]:
+        #if stepwise:
+        #    if node.name in lines[i]:
+        #        from_index=lines[i].index('(')
+        #        if 'params' in lines[i]:
+        #            print("("+node.name + ") function is already stepwise-style.")
+        #            return False
+        #        else:
+        #            lines[i]=lines[i][:from_index+1]+"trial, params):"
+        if node.name in lines[i]:
+            from_index=lines[i].index('(')
+            if 'params' in lines[i]:
+                if stepwise:
                     print("("+node.name + ") function is already stepwise-style.")
-                    return 0
-                else:
+                    return False
+                else: # to change from stepwise func. to normal objective func.
+                    lines[i]=lines[i].replace(", params","").replace(",params","")
+            else:
+                if stepwise:
                     lines[i]=lines[i][:from_index+1]+"trial, params):"
         if 'trial.suggest_' in lines[i]:
             from_index=lines[i].index('(')
             to_index=lines[i].rindex(')')
             target = lines[i][from_index+1:to_index]
             target.replace("'","").replace('"',"")
-            #print(target)
-            targets=[x.replace(' ',"").replace('(',"").replace(')',"") for x in target.split(',')]
-            target_name = targets[0].replace("'","")
+            #targets=[x.replace(' ',"").replace('(',"").replace(')',"") for x in target.split(',')]
+            targets=[x for x in target.split(',')]
+            #target_name = targets[0].replace("'","")
+            target_name = targets[0]
+            #print(target_name)
             if 'trial.suggest_categorical' in lines[i]:
                 cate_from_index=target.index('[')
                 cate_to_index=target.rindex(']')
                 cate_items=target[cate_from_index:cate_to_index+1].replace('"',"")
                 cate_items=[x.strip().replace("'","") for x in cate_items[1:-1].split(',')]
-                d.update({target_name:{"choices":cate_items}})
+                #d.update({target_name:{"choices":cate_items}})
                 if stepwise:
-                    targets[1] = "params['"+target_name+"']['choices']"
-                    mod_target=', '.join(["'"+target_name+"'",str(targets[1])])
+                    targets[1] = 'params["'+target_name+'"]["choices"]'
+                    mod_target=', '.join([target_name,str(targets[1])])
                     lines[i]=(lines[i][:from_index+1]+mod_target+")")
                 if target_name in params:
                     targets[1] = params[target_name]['choices']
-                    mod_target=', '.join(["'"+target_name+"'",str(targets[1])])
+                    mod_target=', '.join([target_name,str(targets[1])])
                     lines[i]=(lines[i][:from_index+1]+mod_target+")")
             else:
-                d.update({target_name:{"low":float(targets[1]),"high":float(targets[2])}})
                 if stepwise:
-                    targets[1] = "params['"+target_name+"']['low']"
-                    targets[2] = "params['"+target_name+"']['high']"
-                    mod_target=', '.join(["'"+target_name+"'",str(targets[1]),str(targets[2])])
+                    targets[1] = 'params["'+target_name+'"]["low"]'
+                    targets[2] = 'params["'+target_name+'"]["high"]'
+                    mod_target=', '.join([target_name,str(targets[1]),str(targets[2])])
                     lines[i]=(lines[i][:from_index+1]+mod_target+")")
                 if target_name in params:
                     targets[1]=params[target_name]['low']
                     targets[2]=params[target_name]['high']
-                    mod_target=', '.join(["'"+target_name+"'",str(targets[1]),str(targets[2])])
+                    mod_target=', '.join([target_name,str(targets[1]),str(targets[2])])
+                    #print(mod_target)
                     lines[i]=(lines[i][:from_index+1]+mod_target+")")
                     # d is current params
-    #prefix="global "+node.name+'\n'
-    prefix=""
+                #d.update({target_name:{"low":float(targets[1]),"high":float(targets[2])}})
+    prefix="\nglobal "+node.name+'\n\n'
+    #prefix=""
     new_string = '\n'.join([x for x in lines if x is not ''])
     results = prefix+new_string
+    #print(results)
     p2=ast.parse(results)
     #exec(compile(p2, filename="<ast>", mode="exec"))
     exec(compile(p2, filename="___temp_module___.py", mode="exec"))
@@ -186,8 +210,7 @@ def override_objfunc_with_newparams(objective, params=None):
     except:
         raise ValueError("___temp_module___.py cannot be generated!")
     #os.remove("___temp_module___.py")
-    return results
-#####################################
+    return True if stepwise else get_params(objective)#####################################
 #####################################
 def create_hpojob(study_name=None, workspace_name=None, job_directory=None, env_name=None, debug=False):
     return Job(study_name=study_name, workspace_name=workspace_name, job_directory=job_directory, env_name=env_name, debug=debug)
