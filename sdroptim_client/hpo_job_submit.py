@@ -196,8 +196,10 @@ def set_params(objective, params=None, get_func_code=False):
                     lines[i]=(lines[i][:from_index+1]+mod_target+")")
                     # d is current params
                 #d.update({target_name:{"low":float(targets[1]),"high":float(targets[2])}})
-    prefix="\nglobal "+node.name+'\n\n'
-    #prefix=""
+    if get_func_code:
+        prefix=""
+    else:
+        prefix="\nglobal "+node.name+'\n\n'
     new_string = '\n'.join([x for x in lines if x is not ''])
     results = prefix+new_string
     #print(results)
