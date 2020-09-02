@@ -387,17 +387,18 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     jobdir= 'JOBDIR=/home/'+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'\n' # path in singularity image (after mounting)
     paths += jobdir
     #
-    types = "scripts" if 'env_name' in gui_params['hpo_system_attr'] else "python"
+    #types = "scripts" if 'env_name' in gui_params['hpo_system_attr'] else "python"
     #
-    if types=="scripts":
-        if 'env_name' in gui_params['hpo_system_attr']:
-            env_name = gui_params['hpo_system_attr']['env_name']
-            env_script = "source activate "+env_name + "\n"
-        else:
-            env_script = ""
-        with open(jobpath+os.sep+job_title+"_running_with_custom_env.sh", 'w') as f:
-            sh_scripts = jobdir+env_script +"cd ${JOBDIR}\npython ${JOBDIR}/"+job_title+"_generated"+".py\n"
-            f.write(sh_scripts)
+    #if types=="scripts":################################################################
+    if 'env_name' in gui_params['hpo_system_attr']:
+        env_name = gui_params['hpo_system_attr']['env_name']
+        env_script = "source activate "+env_name + "\n"
+    else:
+        env_script = ""
+    with open(jobpath+os.sep+job_title+"_run_in_singularity_image.sh", 'w') as f:
+        sh_scripts = jobdir+env_script +"cd ${JOBDIR}\npython ${JOBDIR}/"+job_title+"_generated"+".py\n"
+        f.write(sh_scripts)
+    #####################################################################################
     ## JOB init @ portal // modified 0812 --> deprecated @ 0.1.1 -> used in register function
     job_init ="\n## JOB init @ portal\n"
     job_init+="deJobId=$(curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-submit-de-job "
@@ -418,7 +419,10 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     user_jobdir_mount = ""#"-B ${JOBDIR}:${JOBDIR}"                               # final
     #user_jobdir_mount = "-B /home/jclee/automl_jclee:/${JOBDIR}"                 # my custom
     singularity_image = "/EDISON/SCIDATA/singularity-images/userenv.simg"
-    running_command = ("python ${JOBDIR}/"+job_title+"_generated"+".py") if types == "python" else ("/bin/bash ${JOBDIR}/"+job_title+"_running_with_custom_env.sh")
+    #
+    #running_command = ("python ${JOBDIR}/"+job_title+"_generated"+".py") if types == "python" else ("/bin/bash ${JOBDIR}/"+job_title+"_running_with_custom_env.sh")
+    running_command = "/bin/bash ${JOBDIR}/"+job_title+"_run_in_singularity_image.sh"
+    # 
     ## JOB done @ portal
     job_done = "## JOB done @ portal\n"
     job_done+= "curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status "
