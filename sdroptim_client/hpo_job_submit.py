@@ -378,7 +378,7 @@ class Job(object):
         if stepwise:
             func_stepwise = check_stepwisefunc(objective)
             if not func_stepwise:
-                mod_func_stepwise=set_params(objective=objective, params=None, get_func_code=False)
+                mod_func_stepwise=set_params(objective=objective, params=None, get_func_code=True)
                 if mod_func_stepwise:
                     print("The objective function has been overrided for using the stepwise strategy.")
         if self.debug:
