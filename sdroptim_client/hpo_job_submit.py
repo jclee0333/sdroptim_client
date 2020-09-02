@@ -82,6 +82,10 @@ def get_params(objective):
                 if stepwise:
                     d.update({target_name:{"low":targets[1],"high":targets[2]}})
                 else:
+                    if is_digit(targets[1]):
+                        targets[1] = float(targets[1])
+                    if is_digit(targets[2]):
+                        targets[2] = float(targets[2])
                     if 'suggest_int' in lines[i]:
                         d.update({target_name:{"low":int(targets[1]),"high":int(targets[2])}})
                     else:
