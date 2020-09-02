@@ -110,7 +110,7 @@ def check_stepwisefunc(objective):
             else:
                 return False
 
-def set_params(objective, params=None):
+def set_params(objective, params=None, get_func_code=False):
     '''
     override_objfunc_with_newparams
     e.g)
@@ -210,7 +210,10 @@ def set_params(objective, params=None):
     except:
         raise ValueError("___temp_module___.py cannot be generated!")
     #os.remove("___temp_module___.py")
-    return True if stepwise else get_params(objective)#####################################
+    if get_func_code:
+        return results
+    else:
+        return True if stepwise else get_params(objective)#####################################
 #####################################
 def create_hpojob(study_name=None, workspace_name=None, job_directory=None, env_name=None, debug=False):
     return Job(study_name=study_name, workspace_name=workspace_name, job_directory=job_directory, env_name=env_name, debug=debug)
@@ -375,7 +378,7 @@ class Job(object):
         if stepwise:
             func_stepwise = check_stepwisefunc(objective)
             if not func_stepwise:
-                mod_func_stepwise=set_params(objective)
+                mod_func_stepwise=set_params(objective=objective, params=None, get_func_code=False)
                 if mod_func_stepwise:
                     print("The objective function has been overrided for using the stepwise strategy.")
         if self.debug:
