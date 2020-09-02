@@ -82,6 +82,8 @@ def get_params(objective):
                 if stepwise:
                     d.update({target_name:{"low":targets[1],"high":targets[2]}})
                 else:
+                    targets[1]=targets[1].replace(" ","").replace("(","").replace(")","")
+                    targets[2]=targets[2].replace(" ","").replace("(","").replace(")","")
                     if is_digit(targets[1]):
                         targets[1] = float(targets[1])
                     if is_digit(targets[2]):
