@@ -212,10 +212,10 @@ def set_params(objective, params=None, get_func_code=False):
     p2=ast.parse(results)
     #exec(compile(p2, filename="<ast>", mode="exec"))
     exec(compile(p2, filename="___temp_module___.py", mode="exec"))
-    from ___temp_module___ import objective
     try:
         with open('___temp_module___.py', 'w') as f:
             f.write(results)
+            from ___temp_module___ import objective
     except:
         raise ValueError("___temp_module___.py cannot be generated!")
     if get_func_code:
