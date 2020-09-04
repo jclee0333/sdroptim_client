@@ -215,7 +215,6 @@ def set_params(objective, params=None, get_func_code=False):
     try:
         with open('___temp_module___.py', 'w') as f:
             f.write(results)
-            from ___temp_module___ import objective
     except:
         raise ValueError("___temp_module___.py cannot be generated!")
     if get_func_code:
@@ -225,6 +224,7 @@ def set_params(objective, params=None, get_func_code=False):
             return True
         else:
             print("output functions with:\n"+get_params(objective))
+            from ___temp_module___ import objective
             return objective
 
 #####################################
