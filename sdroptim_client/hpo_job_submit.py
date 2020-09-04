@@ -45,7 +45,7 @@ def get_params(objective):
     lines=pre.split("\n")
     stepwise=False
     for i in range(0,len(lines)):
-        if node.name in lines[i]:
+        if ("def "+node.name+"(" in lines[i]) or ("class "+node.name+"(" in lines[i]):
             from_index=lines[i].index('(')
             if 'params' in lines[i]:
                 stepwise = True
@@ -110,7 +110,7 @@ def check_stepwisefunc(objective):
     #    
     lines=pre.split("\n")
     for i in range(0,len(lines)):
-        if node.name in lines[i]:
+        if ("def "+node.name+"(" in lines[i]) or ("class "+node.name+"(" in lines[i]):
             if ', params):' in lines[i]:
                 return True
             else:
@@ -153,7 +153,7 @@ def set_params(objective, params=None, get_func_code=False):
         #            return False
         #        else:
         #            lines[i]=lines[i][:from_index+1]+"trial, params):"
-        if node.name in lines[i]:
+        if ("def "+node.name+"(" in lines[i]) or ("class "+node.name+"(" in lines[i]):
             from_index=lines[i].index('(')
             if 'params' in lines[i]:
                 if stepwise:
