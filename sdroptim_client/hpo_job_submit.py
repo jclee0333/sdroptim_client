@@ -202,26 +202,31 @@ def set_params(objective, params=None, get_func_code=False):
                     lines[i]=(lines[i][:from_index+1]+mod_target+")")
                     # d is current params
                 #d.update({target_name:{"low":float(targets[1]),"high":float(targets[2])}})
-    if get_func_code:
-        prefix=""
-    else:
-        prefix="\nglobal "+node.name+'\n\n'
+    #if get_func_code:
+    #    prefix=""
+    #else:
+    #    prefix="\nglobal "+node.name+'\n\n'
     new_string = '\n'.join([x for x in lines if x is not ''])
-    results = prefix+new_string
+    results = new_string
     #print(results)
     p2=ast.parse(results)
     #exec(compile(p2, filename="<ast>", mode="exec"))
     exec(compile(p2, filename="___temp_module___.py", mode="exec"))
+    from ___temp_module___ import objective
     try:
         with open('___temp_module___.py', 'w') as f:
             f.write(results)
     except:
         raise ValueError("___temp_module___.py cannot be generated!")
-    #os.remove("___temp_module___.py")
     if get_func_code:
         return results
     else:
-        return True if stepwise else get_params(objective)#####################################
+        if stepwise:
+            return True
+        else:
+            print("output functions with:\n"+get_params(objective))
+            return objective
+
 #####################################
 def create_hpojob(study_name=None, workspace_name=None, job_directory=None, env_name=None, debug=False):
     return Job(study_name=study_name, workspace_name=workspace_name, job_directory=job_directory, env_name=env_name, debug=debug)
