@@ -118,11 +118,11 @@ def check_stepwisefunc(objective):
 
 def set_params(objective, params=None, get_func_code=False):
     '''
-    override_objfunc_with_newparams
+    set_params
     e.g)
-    params = override_objfunc_with_newparams(objective = custom_objective_function)
-    this function exploits values of the input params to override the input function.
-    otherwise, if params are None, override the obj-func. into the stepwise-style obj-func.
+    params = set_params(objective = custom_objective_function)
+    this function uses the input params to modify a copy of given objective func, then returns the modified func as a result.
+    otherwise, if params are None, this function will return a stepwise-style obj-func. as
     custom_objective_function(trial) -> custom_objective_function(trial, params)
     '''
     import os
@@ -202,31 +202,28 @@ def set_params(objective, params=None, get_func_code=False):
                     lines[i]=(lines[i][:from_index+1]+mod_target+")")
                     # d is current params
                 #d.update({target_name:{"low":float(targets[1]),"high":float(targets[2])}})
-    #if get_func_code:
-    #    prefix=""
-    #else:
-    #    prefix="\nglobal "+node.name+'\n\n'
     new_string = '\n'.join([x for x in lines if x is not ''])
     results = new_string
-    #print(results)
     p2=ast.parse(results)
-    #exec(compile(p2, filename="<ast>", mode="exec"))
     exec(compile(p2, filename="___temp_module___.py", mode="exec"))
+    import importlib
     try:
         with open('___temp_module___.py', 'w') as f:
             f.write(results)
+            spec=importlib.util.find_spec('___temp_module___')
+            found = spec is not None
+            if found:
+                module = importlib.util.module_from_spec(spec)
     except:
         raise ValueError("___temp_module___.py cannot be generated!")
-    #from ___temp_module___ import *
     if get_func_code:
         return results
     else:
         if stepwise:
             return True
         else:
-            print("output functions with:\n",get_params(objective))
-
-            return objective
+            print("output functions with:\n",get_params(module))
+            return module
 
 #####################################
 def create_hpojob(study_name=None, workspace_name=None, job_directory=None, env_name=None, debug=False):
