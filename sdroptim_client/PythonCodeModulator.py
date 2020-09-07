@@ -1483,7 +1483,7 @@ def getDLPytorch(gui_params, r_val=None, for_hpo_tune=False, indirect=False, pru
                 cv_num = r_val[gui_params['task']]['DL_Pytorch']['cv']['low']
     else:
         results += "optimizer = getattr(optim, optimizer_name)(model.parameters()"+(",lr = lr" if 'lr' in gui_params['hparams'] else "")+(", momentum = momentum" if 'momentum' in gui_params['hparams'] else "")+")\n"
-
+    results += "scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,threshold=0.1, patience=1, mode='min')\n"
     results += "loss_func = getattr("+("nn" if gui_params['task']=='Regression' else "F")+", loss_name)"+("(reduction='sum')" if gui_params['task']=='Regression' else "") + "\n"
     results += getDLPytorch_TrainFunc(gui_params, cv_num, for_hpo_tune, indirect, prune_available)
     if not for_hpo_tune:
@@ -1622,6 +1622,7 @@ def getDLPytorch_TrainFunc(gui_params, cv_num, for_hpo_tune=False, indirect=Fals
     if prune_available:
         batch_tr_loop += "l_val = -1*(loss**0.5) # RMSE loss for ASHA pruning\n" if gui_params['task']=='Regression' else "l_val = -1*loss # multi log loss for ASHA pruning\n"
         batch_tr_loop += "trial.report(l_val, epoch)\nif trial.should_prune():\n    raise optuna.exceptions.TrialPruned()\n"
+    batch_tr_loop += "scheduler.step(loss)\n"        
     epoch_loop = epoch_title + getIndent(batch_tr_loop, indent_level=4)
     valid_loop = getDLPytorch_TestFunc(gui_params, 'valid_loader', cv_num, indirect) if cv_num >1 else ""
     test_loop = getDLPytorch_TestFunc(gui_params, 'test_loader', cv_num, indirect) if cv_num <2 else ""
@@ -1670,6 +1671,7 @@ def getDLPytorch_CNNmodel(gui_params, r_val, for_hpo_tune=False, stepwise=False)
         for i in range(len(conv_layers_list)):
             conv_layer += 'out_features = ' + str(conv_layers_list[i])+'\n'
             conv_layer += 'layers.append(nn.Conv2d(in_features, out_features, window_size))\n'
+            conv_layer += 'layers.append(nn.BatchNorm2d(out_features))\n'
             conv_layer += 'layers.append(nn.ReLU())\n'
             conv_layer += 'layers.append(nn.MaxPool2d(pooling_size))\n'
             conv_layer += 'layers.append(nn.Dropout2d(p))\n'
@@ -1688,6 +1690,7 @@ def getDLPytorch_CNNmodel(gui_params, r_val, for_hpo_tune=False, stepwise=False)
         for i in range(len(fcn_layers_list)):
             fcn_layer += 'out_features = ' + str(fcn_layers_list[i]) + '\n'
             fcn_layer += 'layers.append(nn.Linear(in_features, out_features))\n'
+            fcn_layer += 'layers.append(nn.BatchNorm1d(out_features))\n'
             fcn_layer += 'layers.append(nn.ReLU())\n'
             fcn_layer += 'in_features = out_features\n'
         fcn_layer += 'layers.append(nn.Linear(in_features, output_dim))\n'
@@ -1701,6 +1704,7 @@ def getDLPytorch_CNNmodel(gui_params, r_val, for_hpo_tune=False, stepwise=False)
         conv_layer += '    out_features = trial.suggest_int("DL_Pytorch_CNN_conv_n_units_l{}".format(i),' + ("params['n_units']['low']" if stepwise else str(r_val[gui_params['task']]['DL_Pytorch']['n_units']['low'])) +', ' + ("params['n_units']['high']" if stepwise else str(r_val[gui_params['task']]['DL_Pytorch']['n_units']['high'])) +')\n'
         conv_layer += '    p = trial.suggest_uniform("DL_Pytorch_CNN_conv_dropout_l{}".format(i), '+ ("params['dropout']['low']" if stepwise else str(r_val[gui_params['task']]['DL_Pytorch']['dropout']['low'])) + ',' + ("params['dropout']['high']" if stepwise else str(r_val[gui_params['task']]['DL_Pytorch']['dropout']['high'])) + ')\n'
         conv_layer += '    layers.append(nn.Conv2d(in_features, out_features, window_size))\n'
+        conv_layer += 'layers.append(nn.BatchNorm2d(out_features))\n'
         conv_layer += '    layers.append(nn.ReLU())\n'
         conv_layer += '    layers.append(nn.MaxPool2d(pooling_size))\n'
         conv_layer += '    layers.append(nn.Dropout2d(p))\n'
@@ -1718,6 +1722,7 @@ def getDLPytorch_CNNmodel(gui_params, r_val, for_hpo_tune=False, stepwise=False)
         fcn_layer += "for i in range(n_layers_fc):\n"
         fcn_layer += '    out_features = trial.suggest_int("DL_Pytorch_CNN_fc_n_units_l{}".format(i),' + ("params['n_units']['low']" if stepwise else str(r_val[gui_params['task']]['DL_Pytorch']['n_units']['low'])) +', ' + ("params['n_units']['high']" if stepwise else str(r_val[gui_params['task']]['DL_Pytorch']['n_units']['high'])) +')\n'
         fcn_layer += '    layers.append(nn.Linear(in_features, out_features))\n'
+        fcn_layer += '    layers.append(nn.BatchNorm1d(out_features))\n'
         fcn_layer += '    layers.append(nn.ReLU())\n'
         fcn_layer += '    in_features = out_features\n'
         fcn_layer += 'layers.append(nn.Linear(in_features, output_dim))\n'
