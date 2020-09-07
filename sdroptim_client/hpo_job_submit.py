@@ -224,7 +224,7 @@ def set_params(objective, params=None, get_func_code=False):
         if stepwise:
             return True
         else:
-            print("output functions with:\n"+get_params(objective))
+            print("output functions with:\n",get_params(objective))
 
             return objective
 
