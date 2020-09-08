@@ -219,11 +219,8 @@ def set_params(objective, params=None, get_func_code=False):
     if get_func_code:
         return results
     else:
-        if stepwise:
-            return True
-        else:
-            print("output functions with:\n",get_params(module))
-            return module
+        print("output functions with:\n",get_params(module))
+        return module
 
 #####################################
 def create_hpojob(study_name=None, workspace_name=None, job_directory=None, env_name=None, debug=False):
