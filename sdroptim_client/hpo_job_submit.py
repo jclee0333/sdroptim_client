@@ -75,8 +75,15 @@ def get_params(objective):
                                 tmp = int(tmp)
                             else:
                                 tmp = float(tmp)
+                        if tmp == 'True':
+                            tmp = True
+                        elif tmp == 'False':
+                            tmp = False
+                        elif tmp == 'None':
+                            tmp = None
                         new_cate_items.append(tmp)
                     cate_items=new_cate_items
+                    print("***",cate_items)
                     d.update({target_name:{"choices":cate_items}})
             else:
                 if stepwise:
