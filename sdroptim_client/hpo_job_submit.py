@@ -343,6 +343,7 @@ class Job(object):
         #greedy=True,
         stepwise=False,
         searching_space="searching_space",
+        seed=2020
         #task_type="gpu"
         ):
         ## configurations
@@ -352,6 +353,7 @@ class Job(object):
             raise ValueError("The maximum number of n_nodes is 4. Try again.")
         else:
             self.n_nodes = n_nodes
+        self.seed = seed
         self.max_sec = max_sec
         #self.greedy = greedy
         if 'direction' in self.gui_params['hpo_system_attr']: # previous direction cannot be modified
@@ -381,6 +383,7 @@ class Job(object):
         self.gui_params['hpo_system_attr'].update({'stepwise':1 if self.stepwise == True else 0})
         self.gui_params['hpo_system_attr'].update({'searching_space':searching_space+".json"})
         self.gui_params['hpo_system_attr'].update({"n_tasks":self.n_tasks})
+        self.gui_params['hpo_system_attr'].update({"seed":self.seed})
         #
         params = get_params(objective)
         params_to_update = {self.gui_params['task']:{self.gui_params['algorithm'][0]:params}}
