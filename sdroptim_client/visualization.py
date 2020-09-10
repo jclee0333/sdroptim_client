@@ -136,41 +136,52 @@ def get_chart_html(args, with_df_csv=False):
         elif gui_params['hpo_system_attr']['job_from']=='jupyterlab':
             pass
     #
-    if not args.outfile_name:
-        args.outfile_name = study_name+"_df.csv"
+    if not args.study_csv:
+        args.study_csv = study_name+"_df.csv"
+    if args.output_dir: # not None
+        args.output_dir = args.output_dir + (os.sep if args.output_dir[-1]!=os.sep else "")
     if with_df_csv:
-        df.to_csv(args.outfile_name)
+        df.to_csv(args.output_dir+args.study_csv)
     #
     history_figure = history_plot(study, direction, chart_y_label)
-    offplot(history_figure, filename = args.outhtml_name, auto_open=False)
+    offplot(history_figure, filename = args.output_dir+args.optimhist_html, auto_open=False)
     #
-    paramimportance_figure = plot_param_importances(study, direction, chart_y_label)
-    offplot(paramimportance_figure, filename = "param_importance_chart.html", auto_open=False)
+    paramimportance_figure = plot_param_importances(study)
+    offplot(paramimportance_figure, filename = args.output_dir+args.paramimpo_html, auto_open=False)
 
 
 def get_default_args():
     args = easydict.EasyDict({
             #"user_name":"",
             "json_file_name":"metadata.json",
-            "outfile_name":"",
-            "outhtml_name":"cum_chart.html"
+            "output_dir":""
+            "study_csv":"",
+            "optimhist_html":"history.html",
+            "paramimpo_html":"paramimpo.html"
     })
     return args  
 
-def get_default_chart_html(json_file_name="", outfile_name="", outhtml_name=""):
+def get_default_chart_html(json_file_name="", output_dir = "", study_csv="", optimhist_html="", paramimpo_html=""):
     args=get_default_args()
     if json_file_name:
         args.json_file_name = json_file_name
-    if outfile_name:
-        args.outfile_name = outfile_name
-    if outhtml_name:
-        args.outhtml_name = outhtml_name
+    if output_dir:
+        args.output_dir = output_dir
+    if study_csv:
+        args.study_csv = study_csv
+    if optimhist_html:
+        args.optimhist_html = optimhist_html
+    if paramimpo_html:
+        args.paramimpo_html = paramimpo_html
     get_chart_html(args, with_df_csv=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--json_file_name', help="json_file_name", type=str, default = '') # json_file_name
-    parser.add_argument('--outfile_name', help="output filename", type=str)
-    parser.add_argument('--outhtml_name', help="output htmlname", type=str, default='cum_chart.html')
+    parser.add_argument('--output_dir', help="output directory", type=str, default= '')
+    parser.add_argument('--study_csv', help="output study dataframe filename", type=str)
+    parser.add_argument('--optimhist_html', help="output optimization history html filename", type=str, default='history.html')
+    parser.add_argument('--paramimpo_html', help="output parameter importance html filename", type=str, default='paramimpo.html')
+    #
     args = parser.parse_args()
     get_chart_html(args, with_df_csv=True)
