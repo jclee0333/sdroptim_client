@@ -154,7 +154,7 @@ def get_default_args():
     args = easydict.EasyDict({
             #"user_name":"",
             "json_file_name":"metadata.json",
-            "output_dir":""
+            "output_dir":"",
             "study_csv":"",
             "optimhist_html":"history.html",
             "paramimpo_html":"paramimpo.html"
