@@ -2,6 +2,7 @@
 import plotly.graph_objects as go
 from plotly.offline import plot as offplot
 import numpy as np
+import os
 import optuna, base64, json, argparse, easydict
 ############################
 ### render config. for jupyter lab
