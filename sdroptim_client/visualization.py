@@ -363,4 +363,4 @@ if __name__ == "__main__":
     parser.add_argument('--paramimpo', help='get paramimpo html True/False', type=str, default='False')
     #
     args = parser.parse_args()
-    get_chart_html(args, with_df_csv=True, args.history, args.paramimpo)
+    get_chart_html(args, with_df_csv=True, history=args.history, paramimpo=args.paramimpo)
