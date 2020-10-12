@@ -87,14 +87,41 @@ def history_plot(study, direction, chart_y_label="Optimization Score"):
                         ])
     return figure
 
+### supporting multiple algorithms for plotting param importances (2020-10-12) by jclee
+def get_params_list_from_df(df, algo_name):
+    df = df.dropna(axis='columns')
+    each_params=[x for x in df.columns if x.startswith("params_"+algo_name)]
+    #### remove columns containing a unique value only.
+    for each_p in each_params:
+        if len(df[each_p].unique())==1:
+            each_params.remove(each_p)
+    ####
+    each_params = [x.replace('params_',"") for x in each_params]
+    return each_params
+def get_params_list_from_multiple_algorithms_study(study):
+    res=[]
+    df=study.trials_dataframe()
+    if 'user_attrs_algorithm_name' in df.columns:
+        algorithm_list = df['user_attrs_algorithm_name'].unique()
+        for each in algorithm_list:
+            each_algo_df=df[df['user_attrs_algorithm_name']==each]
+            ### divide CNN/FNN in DL_Pytorch
+            if each == 'DL_Pytorch':
+                DL_modeltype=each_algo_df['params_DL_Pytorch_model'].unique()
+                for each_DL_modeltype in DL_modeltype:
+                    sampled_df=each_algo_df[each_algo_df['params_DL_Pytorch_model']==each_DL_modeltype]
+                    each_params=get_params_list_from_df(sampled_df, each)
+                    res.append((each+"_"+each_DL_modeltype, each_params))
+                    #optuna.visualization.plot_param_importances(study, params=each_params)
+            ####    
+            each_params=get_params_list_from_df(each_algo_df, each)
+            res.append((each,each_params))
+            #optuna.visualization.plot_param_importances(study, params=each_params)
+    return res
+
 def plot_param_importances(study):
     figure = optuna.visualization.plot_param_importances(study)
     return figure
-#def plot_intermediate_value(self):
-#    _plot_config_for_jupyterlab()
-#    figure = optuna.visualization.plot_intermediate_values(self.get_study())
-#    return figure
-
 
 def get_study(json_file_name):
     import warnings
@@ -130,12 +157,15 @@ def get_chart_html(args, with_df_csv=False):
     chart_y_label = "Optimization Score"
     if 'job_from' in gui_params['hpo_system_attr']:
         if gui_params['hpo_system_attr']['job_from']=='webgui':
+            webgui= True
+            jupyterlab = False
             if gui_params['task']=='Classification':
                 chart_y_label = 'avg. F1 score'
             elif gui_params['task']=='Regression':
                 chart_y_label = 'R2 score'
         elif gui_params['hpo_system_attr']['job_from']=='jupyterlab':
-            pass
+            webgui = False
+            jupyterlab = True
     #
     if not args.study_csv:
         args.study_csv = study_name+"_df.csv"
@@ -147,9 +177,15 @@ def get_chart_html(args, with_df_csv=False):
     history_figure = history_plot(study, direction, chart_y_label)
     offplot(history_figure, filename = args.output_dir+args.optimhist_html, auto_open=False)
     #
-    paramimportance_figure = plot_param_importances(study)
-    offplot(paramimportance_figure, filename = args.output_dir+args.paramimpo_html, auto_open=False)
-
+    if webgui:
+        params_in_all_algorithms = get_params_list_from_multiple_algorithms_study(study)
+        if len(params_in_all_algorithms)>1:
+            for each_params in params_in_all_algorithms: # each_params[0] = algo_name, each_params[1] = params list
+                paramimportance_figure = mod_plot_param_importances(study, title=each_params[0], params=each_params[1])
+                offplot(paramimportance_figure, filename = args.output_dir+each_params[0]+"_"+args.paramimpo_html, auto_open=False)
+    else:
+        paramimportance_figure = plot_param_importances(study)
+        offplot(paramimportance_figure, filename = args.output_dir+args.paramimpo_html, auto_open=False)
 
 def get_default_args():
     args = easydict.EasyDict({
@@ -175,6 +211,104 @@ def get_default_chart_html(json_file_name="", output_dir = "", study_csv="", opt
     if paramimpo_html:
         args.paramimpo_html = paramimpo_html
     get_chart_html(args, with_df_csv=True)
+
+####
+from collections import OrderedDict
+from typing import List
+from typing import Optional
+
+import optuna
+from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
+from optuna.distributions import IntUniformDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
+from optuna.importance._base import BaseImportanceEvaluator
+from optuna.logging import get_logger
+from optuna.study import Study
+from optuna.trial import TrialState
+from optuna.visualization._plotly_imports import _imports
+
+if _imports.is_successful():
+    from optuna.visualization._plotly_imports import go
+
+    import plotly
+
+    Blues = plotly.colors.sequential.Blues
+
+    _distribution_colors = {
+        UniformDistribution: Blues[-1],
+        LogUniformDistribution: Blues[-1],
+        DiscreteUniformDistribution: Blues[-1],
+        IntUniformDistribution: Blues[-2],
+        IntLogUniformDistribution: Blues[-2],
+        CategoricalDistribution: Blues[-4],
+    }
+
+logger = get_logger(__name__)
+
+
+def mod_plot_param_importances(
+    study: Study, evaluator: BaseImportanceEvaluator = None, title = "", params: Optional[List[str]] = None
+) -> "go.Figure":
+    base_title="Hyperparameter Importances"
+    if title:
+        final_title=title+" "+base_title
+    layout = go.Layout(
+        title=final_title,
+        xaxis={"title": "Importance"},
+        yaxis={"title": "Hyperparameter"},
+        showlegend=False,
+    )
+    # Importances cannot be evaluated without completed trials.
+    # Return an empty figure for consistency with other visualization functions.
+    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
+    if len(trials) == 0:
+        logger.warning("Study instance does not contain completed trials.")
+        return go.Figure(data=[], layout=layout)
+    importances = optuna.importance.get_param_importances(
+        study, evaluator=evaluator, params=params
+    )
+    importances = OrderedDict(reversed(list(importances.items())))
+    importance_values = list(importances.values())
+    param_names = list(importances.keys())
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                x=importance_values,
+                y=param_names,
+                text=importance_values,
+                texttemplate="%{text:.2f}",
+                textposition="outside",
+                cliponaxis=False,  # Ensure text is not clipped.
+                hovertemplate=[
+                    _make_hovertext(param_name, importance, study)
+                    for param_name, importance in importances.items()
+                ],
+                marker_color=[_get_color(param_name, study) for param_name in param_names],
+                orientation="h",
+            )
+        ],
+        layout=layout,
+    )
+    return fig
+
+def _get_distribution(param_name: str, study: Study) -> BaseDistribution:
+    for trial in study.trials:
+        if param_name in trial.distributions:
+            return trial.distributions[param_name]
+    assert False
+
+def _get_color(param_name: str, study: Study) -> str:
+    return _distribution_colors[type(_get_distribution(param_name, study))]
+
+def _make_hovertext(param_name: str, importance: float, study: Study) -> str:
+    return "{} ({}): {}<extra></extra>".format(
+        param_name, _get_distribution(param_name, study).__class__.__name__, importance
+    )
+####
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
