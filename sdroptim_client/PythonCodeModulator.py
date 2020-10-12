@@ -295,6 +295,8 @@ def get_jobpath_with_attr(gui_params=None, debug=False):
             jobpath = cwd+os.sep+"workspace/default_ws/job/job-"+timenow
         if not os.path.exists(jobpath):
             os.mkdir(jobpath)
+            os.chmod(jobpath, 0o770) # add permission 201012
+            #
         sname=gui_params['hpo_system_attr']['study_name'] if 'study_name' in gui_params['hpo_system_attr'] else str(uuid.uuid4())        
         job_title = sname+"_in_"+uname
         wsname = "default_ws"
