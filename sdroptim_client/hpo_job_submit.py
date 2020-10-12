@@ -83,7 +83,7 @@ def get_params(objective):
                             tmp = None
                         new_cate_items.append(tmp)
                     cate_items=new_cate_items
-                    print("***",cate_items)
+                    #print("***",cate_items)
                     d.update({target_name:{"choices":cate_items}})
             else:
                 if stepwise:
