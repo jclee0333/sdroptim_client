@@ -187,7 +187,7 @@ def get_study(json_file_name):
 #        paramimportance_figure = plot_param_importances(study)
 #        offplot(paramimportance_figure, filename = args.output_dir+args.paramimpo_html, auto_open=False)
 
-def get_chart_html(args, with_df_csv=False, history, paramimpo):
+def get_chart_html(args, with_df_csv=False, history="True", paramimpo="False"):
     study, study_name, direction = get_study(args.json_file_name)
     df = study.trials_dataframe()
     with open(args.json_file_name, 'r') as data_file:
