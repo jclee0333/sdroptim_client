@@ -149,7 +149,45 @@ def get_study(json_file_name):
     return s, study_name, direction
 
 
-def get_chart_html(args, with_df_csv=False):
+#def get_chart_html(args, with_df_csv=False):
+#    study, study_name, direction = get_study(args.json_file_name)
+#    df = study.trials_dataframe()
+#    with open(args.json_file_name, 'r') as data_file:
+#        gui_params = json.load(data_file)
+#    chart_y_label = "Optimization Score"
+#    if 'job_from' in gui_params['hpo_system_attr']:
+#        if gui_params['hpo_system_attr']['job_from']=='webgui':
+#            webgui= True
+#            jupyterlab = False
+#            if gui_params['task']=='Classification':
+#                chart_y_label = 'avg. F1 score'
+#            elif gui_params['task']=='Regression':
+#                chart_y_label = 'R2 score'
+#        elif gui_params['hpo_system_attr']['job_from']=='jupyterlab':
+#            webgui = False
+#            jupyterlab = True
+#    #
+#    if not args.study_csv:
+#        args.study_csv = study_name+"_df.csv"
+#    if args.output_dir: # not None
+#        args.output_dir = args.output_dir + (os.sep if args.output_dir[-1]!=os.sep else "")
+#    if with_df_csv:
+#        df.to_csv(args.output_dir+args.study_csv)
+#    #
+#    history_figure = history_plot(study, direction, chart_y_label)
+#    offplot(history_figure, filename = args.output_dir+args.optimhist_html, auto_open=False)
+#    #
+#    if webgui:
+#        params_in_all_algorithms = get_params_list_from_multiple_algorithms_study(study)
+#        if len(params_in_all_algorithms)>1:
+#            for each_params in params_in_all_algorithms: # each_params[0] = algo_name, each_params[1] = params list
+#                paramimportance_figure = mod_plot_param_importances(study, title=each_params[0], params=each_params[1])
+#                offplot(paramimportance_figure, filename = args.output_dir+each_params[0]+"_"+args.paramimpo_html, auto_open=False)
+#    else:
+#        paramimportance_figure = plot_param_importances(study)
+#        offplot(paramimportance_figure, filename = args.output_dir+args.paramimpo_html, auto_open=False)
+
+def get_chart_html(args, with_df_csv=False, history, paramimpo):
     study, study_name, direction = get_study(args.json_file_name)
     df = study.trials_dataframe()
     with open(args.json_file_name, 'r') as data_file:
@@ -174,18 +212,22 @@ def get_chart_html(args, with_df_csv=False):
     if with_df_csv:
         df.to_csv(args.output_dir+args.study_csv)
     #
-    history_figure = history_plot(study, direction, chart_y_label)
-    offplot(history_figure, filename = args.output_dir+args.optimhist_html, auto_open=False)
+    if history == "True":
+        history_figure = history_plot(study, direction, chart_y_label)
+        offplot(history_figure, filename = args.output_dir+args.optimhist_html, auto_open=False)
     #
-    if webgui:
-        params_in_all_algorithms = get_params_list_from_multiple_algorithms_study(study)
-        if len(params_in_all_algorithms)>1:
-            for each_params in params_in_all_algorithms: # each_params[0] = algo_name, each_params[1] = params list
-                paramimportance_figure = mod_plot_param_importances(study, title=each_params[0], params=each_params[1])
-                offplot(paramimportance_figure, filename = args.output_dir+each_params[0]+"_"+args.paramimpo_html, auto_open=False)
-    else:
-        paramimportance_figure = plot_param_importances(study)
-        offplot(paramimportance_figure, filename = args.output_dir+args.paramimpo_html, auto_open=False)
+    if paramimpo == "True":
+        if webgui:
+            params_in_all_algorithms = get_params_list_from_multiple_algorithms_study(study)
+            if len(params_in_all_algorithms)>1:
+                for each_params in params_in_all_algorithms: # each_params[0] = algo_name, each_params[1] = params list
+                    paramimportance_figure = mod_plot_param_importances(study, title=each_params[0], params=each_params[1])
+                    offplot(paramimportance_figure, filename = args.output_dir+each_params[0]+"_"+args.paramimpo_html, auto_open=False)
+        else:
+            paramimportance_figure = plot_param_importances(study)
+            offplot(paramimportance_figure, filename = args.output_dir+args.paramimpo_html, auto_open=False)
+
+
 
 def get_default_args():
     args = easydict.EasyDict({
@@ -317,6 +359,8 @@ if __name__ == "__main__":
     parser.add_argument('--study_csv', help="output study dataframe filename", type=str)
     parser.add_argument('--optimhist_html', help="output optimization history html filename", type=str, default='history.html')
     parser.add_argument('--paramimpo_html', help="output parameter importance html filename", type=str, default='paramimpo.html')
+    parser.add_argument('--history', help='get history html True/False', type=str, default='True')
+    parser.add_argument('--paramimpo', help='get paramimpo html True/False', type=str, default='False')
     #
     args = parser.parse_args()
-    get_chart_html(args, with_df_csv=True)
+    get_chart_html(args, with_df_csv=True, args.history, args.paramimpo)
