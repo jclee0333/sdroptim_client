@@ -92,12 +92,14 @@ def get_params_list_from_df(df, algo_name):
     df = df.dropna(axis='columns')
     each_params=[x for x in df.columns if x.startswith("params_"+algo_name)]
     #### remove columns containing a unique value only.
+    removal_params=[]
     for each_p in each_params:
         if len(df[each_p].unique())==1:
-            each_params.remove(each_p)
+            removal_params.append(each_p)
     ####
-    each_params = [x.replace('params_',"") for x in each_params]
-    return each_params
+    res = [x.replace('params_','') for x in each_params if x not in removal_params]
+    return res
+
 def get_params_list_from_multiple_algorithms_study(study):
     res=[]
     df=study.trials_dataframe()
@@ -221,7 +223,7 @@ def get_chart_html(args, with_df_csv=False, history="True", paramimpo="False"):
     if paramimpo == "True":
         if webgui:
             params_in_all_algorithms = get_params_list_from_multiple_algorithms_study(study)
-            if len(params_in_all_algorithms)>1:
+            if len(params_in_all_algorithms)>=1:
                 for each_params in params_in_all_algorithms: # each_params[0] = algo_name, each_params[1] = params list
                     paramimportance_figure = mod_plot_param_importances(study, title=each_params[0], params=each_params[1])
                     offplot(paramimportance_figure, filename = args.output_dir+each_params[0]+"_"+args.paramimpo_html, auto_open=False)
@@ -279,11 +281,8 @@ from optuna.visualization._plotly_imports import _imports
 
 if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
-
     import plotly
-
     Blues = plotly.colors.sequential.Blues
-
     _distribution_colors = {
         UniformDistribution: Blues[-1],
         LogUniformDistribution: Blues[-1],
