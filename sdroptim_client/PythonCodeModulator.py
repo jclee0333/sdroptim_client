@@ -1025,7 +1025,8 @@ def getObjectiveFunction_(resources, gui_params, indirect=False, stepwise=False,
         #
         model_name = "model" if each_algorithm == 'DL_Pytorch' else "clf"
         rval_each_algorithm = "sdroptim.retrieve_model(algorithm_name, "+model_name+", trial.number, "+rval_score_str + \
-                              ", top_n_all = "+ str(top_n_all)+", top_n_each_algo = " + str(top_n_each_algo) + ")\n"
+                              ", top_n_all = "+ str(top_n_all)+", top_n_each_algo = " + str(top_n_each_algo) + \
+                              ", with_perf_png = True, vs = "+ ")\n"
         rval_each_algorithm+= "return "+rval_score_str
         #
         results = results + getIndent(rval_each_algorithm, indent_level=8)
@@ -1375,9 +1376,10 @@ def getXGBoost_TrainFunc(gui_params, cv_num, for_hpo_tune=False, prune_available
     results = "from sklearn.model_selection import KFold\nkfold = KFold(n_splits = "+("XGBoost_cv" if for_hpo_tune else str(cv_num))+")\n" if cv_num>0 else ""
     results += "X_train, y_train = train_data[features].values, train_data[target].values\n"
     results += "X_test, y_test = test_data[features].values, test_data[target].values\n"
+    results += "dtest = xgb.DMatrix(X_test, label = y_test)\n"
     if cv_num<1:
         results += "dtrain = xgb.DMatrix(X_train, label = y_train)\n"
-        results += "dtest = xgb.DMatrix(X_test, label = y_test)\n"
+        #results += "dtest = xgb.DMatrix(X_test, label = y_test)\n"
     else:
         results += "scores = []\n"
         results += "for fold, (train_index, valid_index) in enumerate(kfold.split(X_train, y_train)):\n"
@@ -1670,7 +1672,11 @@ def getDLPytorch_CNNmodel(gui_params, r_val, for_hpo_tune=False, stepwise=False)
         conv_layers_list = gui_params['hparams']['hidden']['conv'].split(',')
         fcn_layers_list = gui_params['hparams']['hidden']['fcn'].split(',')
         conv_layer = "# 1. conv layers\n"
-        conv_layer += 'in_features = 1\n'
+        conv_layer += 'in_features = '
+        if gui_params['ml_file_info']['image_color'] == 'GRAYSCALE':
+            conv_layer += '1\n' 
+        elif gui_params['ml_file_info']['image_color'] == 'RGB':
+            conv_layer += '3\n'  # bug fix 1102
         for i in range(len(conv_layers_list)):
             conv_layer += 'out_features = ' + str(conv_layers_list[i])+'\n'
             conv_layer += 'layers.append(nn.Conv2d(in_features, out_features, window_size))\n'
