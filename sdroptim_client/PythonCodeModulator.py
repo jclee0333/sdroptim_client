@@ -421,7 +421,7 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     #user_home_mount_for_custom_enviromnent = "-H /home/"+uname+":"+"/home/"+uname  # my custom
     user_jobdir_mount = ""#"-B ${JOBDIR}:${JOBDIR}"                               # final
     #user_jobdir_mount = "-B /home/jclee/automl_jclee:/${JOBDIR}"                 # my custom
-    singularity_image = "/EDISON/SCIDATA/singularity-images/userenv.simg"
+    singularity_image = "/EDISON/SCIDATA/singularity-images/userenv"
     #
     #running_command = ("python ${JOBDIR}/"+job_title+"_generated"+".py") if types == "python" else ("/bin/bash ${JOBDIR}/"+job_title+"_running_with_custom_env.sh")
     running_command = "/bin/bash ${JOBDIR}/"+job_title+"_run_in_singularity_image.sh"
