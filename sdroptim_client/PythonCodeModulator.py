@@ -1034,8 +1034,22 @@ def getObjectiveFunction_(resources, gui_params, indirect=False, stepwise=False,
                 rval_score_str = "[predicted, test_data[target]]"
         #
         model_name = "model" if each_algorithm == 'DL_Pytorch' else "clf"
+        ##
+        with_label_names_tag = False
+        if gui_params['task']=='Regression':
+            perf_metric = 'r2'
+        elif gui_params['task']=='Classification':
+            perf_metric = 'f1'
+            with_label_names_tag = True
+        direction_minimize = False
+        if 'direction' in gui_params['hpo_system_attr']:
+            if gui_params['hpo_system_attr']['direction']== 'minimize':
+                direction_minimze = True
         rval_each_algorithm = "sdroptim.retrieve_model(algorithm_name, "+model_name+", trial.number, "+rval_score_str + \
-                              ", top_n_all = "+ str(top_n_all)+", top_n_each_algo = " + str(top_n_each_algo) + ")\n"
+                              ", metric = " + perf_metric + (", label_names = label_names" if with_label_names_tag else "") + \
+                              ", top_n_all = "+ str(top_n_all)+", top_n_each_algo = " + str(top_n_each_algo) + \
+                              (", direction = 'minimize'" if direction_minimize else "") +\
+                              ")\n"
         rval_each_algorithm+= "return "+rval_score_str
         #
         results = results + getIndent(rval_each_algorithm, indent_level=8)
