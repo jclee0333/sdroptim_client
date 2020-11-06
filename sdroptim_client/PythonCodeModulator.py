@@ -394,8 +394,9 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     #
     #if types=="scripts":################################################################
     if 'env_name' in gui_params['hpo_system_attr']:
-        env_name = gui_params['hpo_system_attr']['env_name']
-        env_script = "source activate "+env_name + "\n"
+        #env_name = gui_params['hpo_system_attr']['env_name']
+        #env_script = "source activate "+env_name + "\n"
+        env_script = "" ### temporary disabled by jclee @ 2020. 11. 06 
     else:
         env_script = ""
     with open(jobpath+os.sep+job_title+"_run_in_singularity_image.sh", 'w') as f:
