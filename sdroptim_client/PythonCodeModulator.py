@@ -1020,7 +1020,7 @@ def getObjectiveFunction_(resources, gui_params, indirect=False, stepwise=False,
         top_n_each_algo = gui_params['hpo_system_attr']['top_n_each_algo'] if 'top_n_each_algo' in gui_params['hpo_system_attr'] else 3
         #
         if 'cv' in searching_space[gui_params['task']][each_algorithm]:    
-            #rval_score_str = "scores.mean()"
+            ori_rval_score_str = "scores.mean()"
             if each_algorithm in ['XGBoost', 'LightGBM', 'DL_Pytorch']:
                 rval_score_str = "[global_vs['Predicted'], global_vs['Actual']]"
             else:
@@ -1031,7 +1031,7 @@ def getObjectiveFunction_(resources, gui_params, indirect=False, stepwise=False,
             elif each_algorithm == 'DL_Pytorch':
                 rval_score_str = "[vs_test_loader['Predicted'], vs_test_loader['Actual']]"
             else:
-                #rval_score_str = "confidence"
+                ori_rval_score_str = "confidence"
                 rval_score_str = "[predicted, test_data[target]]"
         #
         model_name = "model" if each_algorithm == 'DL_Pytorch' else "clf"
@@ -1051,7 +1051,7 @@ def getObjectiveFunction_(resources, gui_params, indirect=False, stepwise=False,
                               ", top_n_all = "+ str(top_n_all)+", top_n_each_algo = " + str(top_n_each_algo) + \
                               (", direction = 'minimize'" if direction_minimize else "") +\
                               ")\n"
-        rval_each_algorithm+= "return "+rval_score_str
+        rval_each_algorithm+= "return "+ori_rval_score_str
         #
         results = results + getIndent(rval_each_algorithm, indent_level=8)
         distribution_context = "" # refresh for another algorithm
