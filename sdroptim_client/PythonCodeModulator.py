@@ -1035,8 +1035,7 @@ def getObjectiveFunction_(resources, gui_params, indirect=False, stepwise=False,
         #
         model_name = "model" if each_algorithm == 'DL_Pytorch' else "clf"
         rval_each_algorithm = "sdroptim.retrieve_model(algorithm_name, "+model_name+", trial.number, "+rval_score_str + \
-                              ", top_n_all = "+ str(top_n_all)+", top_n_each_algo = " + str(top_n_each_algo) + \
-                              ", with_perf_png = True, vs = "+ ")\n"
+                              ", top_n_all = "+ str(top_n_all)+", top_n_each_algo = " + str(top_n_each_algo) + ")\n"
         rval_each_algorithm+= "return "+rval_score_str
         #
         results = results + getIndent(rval_each_algorithm, indent_level=8)
