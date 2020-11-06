@@ -1019,9 +1019,19 @@ def getObjectiveFunction_(resources, gui_params, indirect=False, stepwise=False,
         top_n_each_algo = gui_params['hpo_system_attr']['top_n_each_algo'] if 'top_n_each_algo' in gui_params['hpo_system_attr'] else 3
         #
         if 'cv' in searching_space[gui_params['task']][each_algorithm]:    
-            rval_score_str = "scores.mean()"
+            #rval_score_str = "scores.mean()"
+            if each_algorithm in ['XGBoost', 'LightGBM', 'DL_Pytorch']:
+                rval_score_str = "[global_vs['Predicted'], global_vs['Actual']]"
+            else:
+                rval_score_str = "[predicted, test_data[target]]"
         else:
-            rval_score_str = "confidence"
+            if each_algorithm in ['XGBoost','LightGBM']:
+                rval_score_str = "[predicted, y_test]"
+            elif each_algorithm == 'DL_Pytorch':
+                rval_score_str = "[vs_test_loader['Predicted'], vs_test_loader['Actual']]"
+            else:
+                #rval_score_str = "confidence"
+                rval_score_str = "[predicted, test_data[target]]"
         #
         model_name = "model" if each_algorithm == 'DL_Pytorch' else "clf"
         rval_each_algorithm = "sdroptim.retrieve_model(algorithm_name, "+model_name+", trial.number, "+rval_score_str + \
@@ -1256,6 +1266,7 @@ def getLightGBM_TrainFunc(gui_params, cv_num, for_hpo_tune=False, prune_availabl
         results += "dtest = lgb.Dataset(X_test, label = y_test)\n"
     else:
         results += "scores = []\n"
+        results += "global_vs = pd.DataFrame(columns=['Predicted','Actual'])\n" # add 1106
         results += "for fold, (train_index, valid_index) in enumerate(kfold.split(X_train, y_train)):\n"
         results += "    dtrain = lgb.Dataset(X_train[train_index], label = y_train[train_index])\n"    
         results += "    dvalid = lgb.Dataset(X_train[valid_index], label = y_train[valid_index])\n"
@@ -1266,6 +1277,7 @@ def getLightGBM_TrainFunc(gui_params, cv_num, for_hpo_tune=False, prune_availabl
     train += (", callbacks=[pruning_callback]" if prune_available else "") + ")\n"
     predict = "predicted = clf.predict(" + ("X_test" if cv_num<1 else "X_train[valid_index]") + ")\n"
     predict += "predicted = np.argmax(predicted, axis=1)\n" if gui_params['task'] == 'Classification' else ""
+    predict += "global_vs = global_vs.append(np.c_[predicted, "+("y_test" if cv_num<1 else "y_train[valid_index]")+"])\n" # add 1106
     if gui_params['task'] == 'Regression':
         confidence = "confidence = sklearn.metrics.r2_score(predicted, " + ("y_test" if cv_num<1 else "y_train[valid_index]") + ")\n"
     elif gui_params['task'] == 'Classification':
@@ -1382,6 +1394,7 @@ def getXGBoost_TrainFunc(gui_params, cv_num, for_hpo_tune=False, prune_available
         #results += "dtest = xgb.DMatrix(X_test, label = y_test)\n"
     else:
         results += "scores = []\n"
+        results += "global_vs = pd.DataFrame(columns=['Predicted','Actual'])\n" # add 1106
         results += "for fold, (train_index, valid_index) in enumerate(kfold.split(X_train, y_train)):\n"
         results += "    dtrain = xgb.DMatrix(X_train[train_index], label = y_train[train_index])\n"    
         results += "    dvalid = xgb.DMatrix(X_train[valid_index], label = y_train[valid_index])\n"
@@ -1390,6 +1403,7 @@ def getXGBoost_TrainFunc(gui_params, cv_num, for_hpo_tune=False, prune_available
              + ", early_stopping_rounds = max(int(XGBoost_num_boost_round/10),5), verbose_eval = XGBoost_num_boost_round, " \
              + "evals=["+ ("(dtest, 'valid')" if cv_num<1 else "(dvalid, 'valid')")  + "]" + (", callbacks=[pruning_callback]" if prune_available else "") + ")\n"
     predict = "predicted = clf.predict(" + ("dtest" if cv_num<1 else "dvalid") + ")\n"
+    predict+= "global_vs = global_vs.append(np.c_[predicted, "+("y_test" if cv_num<1 else "y_train[valid_index]")+"])\n" # add 1106
     if gui_params['task'] == 'Regression':
         confidence = "confidence = sklearn.metrics.r2_score(predicted, " + ("y_test" if cv_num<1 else "y_train[valid_index]") + ")\n"
     elif gui_params['task'] == 'Classification':
@@ -1588,6 +1602,7 @@ def getDLPytorch_TrainFunc(gui_params, cv_num, for_hpo_tune=False, indirect=Fals
     preprocessing_for_indirect_images = getTransformsFunc(gui_params) if indirect else ""
     #
     fold_data = "scores = []\n"
+    fold_data += "global_vs = pd.DataFrame(columns=['Predicted','Actual'])\n" # add 1106
     fold_data += "for fold, (train_index, valid_index) in enumerate(kfold.split(X_train, y_train)):\n"
     fold_data += "    model.load_state_dict(init_state)\n"
     fold_data += "    optimizer.load_state_dict(init_state_opt)\n"
@@ -1652,6 +1667,7 @@ def getDLPytorch_TestFunc(gui_params, loader_name, cv_num, indirect=False):
     results += "        y_true_list += label.cpu().numpy().tolist()\n"
     vs_loader_name = "vs"+("" if loader_name == 'test_loader' else "_"+loader_name)
     results += vs_loader_name +" = pd.DataFrame(np.c_[y_pred_list, y_true_list], columns=['Predicted', 'Actual'])\n"
+    results += "global_vs = global_vs.append("+vs_loader_name+")\n"
     results += "confidence"+("" if loader_name == 'test_loader' else "_"+loader_name)
     # binary classification 의 f1 score case 적용이 필요함
     results += " = metrics.r2_score("+vs_loader_name+"['Actual'], "+vs_loader_name+"['Predicted'])\n" if gui_params['task']=='Regression' else " = metrics.f1_score("+vs_loader_name+"['Actual'], "+vs_loader_name+"['Predicted'], average='macro')\n"
