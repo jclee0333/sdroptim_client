@@ -1291,7 +1291,8 @@ def getLightGBM_TrainFunc(gui_params, cv_num, for_hpo_tune=False, prune_availabl
     train += (", callbacks=[pruning_callback]" if prune_available else "") + ")\n"
     predict = "predicted = clf.predict(" + ("X_test" if cv_num<1 else "X_train[valid_index]") + ")\n"
     predict += "predicted = np.argmax(predicted, axis=1)\n" if gui_params['task'] == 'Classification' else ""
-    predict += "global_vs = global_vs.append(np.c_[predicted, "+("y_test" if cv_num<1 else "y_train[valid_index]")+"])\n" # add 1106
+    predict += "vs = pd.DataFrame(np.c_[predicted, "+("y_test" if cv_num<1 else "y_train[valid_index]") + "], columns = ['Predicted', 'Actual'])\n" # add 1106
+    predict += "global_vs = global_vs.append(vs)\n" # add 1106
     if gui_params['task'] == 'Regression':
         confidence = "confidence = sklearn.metrics.r2_score(predicted, " + ("y_test" if cv_num<1 else "y_train[valid_index]") + ")\n"
     elif gui_params['task'] == 'Classification':
@@ -1417,7 +1418,8 @@ def getXGBoost_TrainFunc(gui_params, cv_num, for_hpo_tune=False, prune_available
              + ", early_stopping_rounds = max(int(XGBoost_num_boost_round/10),5), verbose_eval = XGBoost_num_boost_round, " \
              + "evals=["+ ("(dtest, 'valid')" if cv_num<1 else "(dvalid, 'valid')")  + "]" + (", callbacks=[pruning_callback]" if prune_available else "") + ")\n"
     predict = "predicted = clf.predict(" + ("dtest" if cv_num<1 else "dvalid") + ")\n"
-    predict+= "global_vs = global_vs.append(np.c_[predicted, "+("y_test" if cv_num<1 else "y_train[valid_index]")+"])\n" # add 1106
+    predict += "vs = pd.DataFrame(np.c_[predicted, "+("y_test" if cv_num<1 else "y_train[valid_index]") + "], columns = ['Predicted', 'Actual'])\n" # add 1106
+    predict += "global_vs = global_vs.append(vs)\n" # add 1106
     if gui_params['task'] == 'Regression':
         confidence = "confidence = sklearn.metrics.r2_score(predicted, " + ("y_test" if cv_num<1 else "y_train[valid_index]") + ")\n"
     elif gui_params['task'] == 'Classification':
