@@ -1047,7 +1047,7 @@ def getObjectiveFunction_(resources, gui_params, indirect=False, stepwise=False,
             if gui_params['hpo_system_attr']['direction']== 'minimize':
                 direction_minimze = True
         rval_each_algorithm = "sdroptim.retrieve_model(algorithm_name, "+model_name+", trial.number, "+rval_score_str + \
-                              ", metric = " + perf_metric + (", label_names = label_names" if with_label_names_tag else "") + \
+                              ", metric = '" + perf_metric + ("', label_names = label_names" if with_label_names_tag else "") + \
                               ", top_n_all = "+ str(top_n_all)+", top_n_each_algo = " + str(top_n_each_algo) + \
                               (", direction = 'minimize'" if direction_minimize else "") +\
                               ")\n"
