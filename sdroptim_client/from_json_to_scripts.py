@@ -30,7 +30,7 @@ def FullscriptsGenerator(json_file_name):
         jobscripts = PyMod.get_batch_script(gui_params)
         with open(jobpath+os.sep+'job.sh', 'w') as f:
             f.write(jobscripts)
-            os.chmod(jobpath+os.sep+'job.sh', 0o666) # add permission 201012
+            os.chmod(jobpath+os.sep+'job.sh', 0o777) # add permission 201012
         #############################
     else: # if not hpo
         if gui_params['kernel'] == 'R':
