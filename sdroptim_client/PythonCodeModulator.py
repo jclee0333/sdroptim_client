@@ -1745,7 +1745,7 @@ def getDLPytorch_CNNmodel(gui_params, r_val, for_hpo_tune=False, stepwise=False)
         conv_layer += '    out_features = trial.suggest_int("DL_Pytorch_CNN_conv_n_units_l{}".format(i),' + ("params['n_units']['low']" if stepwise else str(r_val[gui_params['task']]['DL_Pytorch']['n_units']['low'])) +', ' + ("params['n_units']['high']" if stepwise else str(r_val[gui_params['task']]['DL_Pytorch']['n_units']['high'])) +')\n'
         conv_layer += '    p = trial.suggest_uniform("DL_Pytorch_CNN_conv_dropout_l{}".format(i), '+ ("params['dropout']['low']" if stepwise else str(r_val[gui_params['task']]['DL_Pytorch']['dropout']['low'])) + ',' + ("params['dropout']['high']" if stepwise else str(r_val[gui_params['task']]['DL_Pytorch']['dropout']['high'])) + ')\n'
         conv_layer += '    layers.append(nn.Conv2d(in_features, out_features, window_size))\n'
-        conv_layer += 'layers.append(nn.BatchNorm2d(out_features))\n'
+        conv_layer += '    layers.append(nn.BatchNorm2d(out_features))\n'
         conv_layer += '    layers.append(nn.ReLU())\n'
         conv_layer += '    layers.append(nn.MaxPool2d(pooling_size))\n'
         conv_layer += '    layers.append(nn.Dropout2d(p))\n'
