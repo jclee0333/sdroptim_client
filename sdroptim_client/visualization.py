@@ -260,6 +260,20 @@ def get_default_chart_html(json_file_name="", output_dir = "", study_csv="", opt
         args.paramimpo_html = paramimpo_html
     get_chart_html(args, with_df_csv=True)
 
+def get_all_chart_html(json_file_name="metadata.json", output_dir = "./", study_csv="", optimhist_html="", paramimpo_html=""):
+    args=get_default_args()
+    if json_file_name:
+        args.json_file_name = json_file_name
+    if output_dir:
+        args.output_dir = output_dir
+    if study_csv:
+        args.study_csv = study_csv
+    if optimhist_html:
+        args.optimhist_html = optimhist_html
+    if paramimpo_html:
+        args.paramimpo_html = paramimpo_html
+    get_chart_html(args, with_df_csv=True, history="True", paramimpo="True")
+
 ####
 from collections import OrderedDict
 from typing import List
