@@ -295,7 +295,7 @@ def get_jobpath_with_attr(gui_params=None, debug=False):
             jobpath = cwd+os.sep+"workspace/default_ws/job/job-"+timenow
         if not os.path.exists(jobpath):
             os.mkdir(jobpath)
-            os.chmod(jobpath, 0o770) # add permission 201012
+            os.chmod(jobpath, 0o776) # add permission 201012
             #
         sname=gui_params['hpo_system_attr']['study_name'] if 'study_name' in gui_params['hpo_system_attr'] else str(uuid.uuid4())        
         job_title = sname+"_in_"+uname
@@ -323,7 +323,7 @@ def get_jobpath_with_attr(gui_params=None, debug=False):
     jobpath = each+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)
     if not os.path.exists(jobpath):
         os.mkdir(jobpath)
-        os.chmod(jobpath, 0o770) # add permission 201012
+        os.chmod(jobpath, 0o776) # add permission 201012
     return jobpath, (uname, sname, job_title, wsname, job_directory)
 
 def get_batch_script(gui_params, debug=False, dejob_id=""):
@@ -438,6 +438,11 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     job_done+=" -d Status=SUCCESS\n"
     results = prefix+paths+(job_init if 'n_tasks' not in gui_params['hpo_system_attr'] else "")+mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" " + running_command + "\n\n"+job_done
     # job_init can be added when gui-hpo, while jupyter-hpo exploits its own python-api _request_submit_job()
+    # auto-gen all chart when finished
+    results+= "\n## Generate charts after job done\n"
+    results+= "singularity exec --nv -H ${HOME}:/home/"+uname+" /EDISON/SCIDATA/singularity-images/userenv "
+    results+= "python -c 'from sdroptim_client import visualization as v;v.get_all_chart_html(json_file_name=${JOBDIR}/metadata.json, output_dir=${JOBDIR});'\n"
+    
     return results    
 #    
 
