@@ -225,9 +225,12 @@ def get_chart_html(args, with_df_csv=False, history="True", paramimpo="False"):
             params_in_all_algorithms = get_params_list_from_multiple_algorithms_study(study)
             if len(params_in_all_algorithms)>=1:
                 for each_params in params_in_all_algorithms: # each_params[0] = algo_name, each_params[1] = params list
-                    paramimportance_figure = mod_plot_param_importances(study, title=each_params[0], params=each_params[1])
-                    offplot(paramimportance_figure, filename = args.output_dir+each_params[0]+"_"+args.paramimpo_html, auto_open=False)
-                    os.chmod(args.output_dir+each_params[0]+"_"+args.paramimpo_html, 0o770) # add permission 201012
+                    try:
+                        paramimportance_figure = mod_plot_param_importances(study, title=each_params[0], params=each_params[1])
+                        offplot(paramimportance_figure, filename = args.output_dir+each_params[0]+"_"+args.paramimpo_html, auto_open=False)
+                        os.chmod(args.output_dir+each_params[0]+"_"+args.paramimpo_html, 0o770) # add permission 201012
+                    except:
+                        pass
         else:
             paramimportance_figure = plot_param_importances(study)
             offplot(paramimportance_figure, filename = args.output_dir+args.paramimpo_html, auto_open=False)
