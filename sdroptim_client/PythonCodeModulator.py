@@ -402,9 +402,11 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     with open(jobpath+os.sep+job_title+"_run_in_singularity_image.sh", 'w') as f:
         sh_scripts = jobdir+env_script +"cd ${JOBDIR}\npython ${JOBDIR}/"+job_title+"_generated"+".py\n"
         f.write(sh_scripts)
-    with open(jobpath+os.sep+job_title+"_get_all_chart.sh",'w') as f2:
-        sh_scripts2 = jobdir+env_script +"cd ${JOBDIR}\npython -c 'from sdroptim_client import visualization as v;v.get_all_chart_html();'\n"
+        os.chmod(jobpath+os.sep+job_title+"_run_in_singularity_image.sh", 0o666) # add permission 201012
+    with open(jobpath+os.sep+"get_all_chart.sh",'w') as f2:
+        sh_scripts2 = jobdir+env_script +"python -c 'from sdroptim_client import visualization as v;v.get_all_chart_html();'\n"
         f2.write(sh_scripts2)
+        os.chmod(jobpath+os.sep+"get_all_chart.sh", 0o666) # add permission 201012
     #####################################################################################
     ## JOB init @ portal // modified 0812 --> deprecated @ 0.1.1 -> used in register function
     job_init ="\n## JOB init @ portal\n"
@@ -443,7 +445,8 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     # job_init can be added when gui-hpo, while jupyter-hpo exploits its own python-api _request_submit_job()
     # auto-gen all chart when finished
     results+= "\n## Generate charts after job done\n"
-    results+= "singularity exec --nv -H ${HOME}:/home/"+uname+" /EDISON/SCIDATA/singularity-images/userenv /bin/bash ${JOBDIR}/"+job_title+"_get_all_chart.sh\n"
+    #results+= "singularity exec --nv -H ${HOME}:/home/"+uname+" /EDISON/SCIDATA/singularity-images/userenv /bin/bash ${JOBDIR}/"+job_title+"_get_all_chart.sh\n"
+    results+= "get_all_chart.sh\n"
     #results+= "python -c 'from sdroptim_client import visualization as v;v.get_all_chart_html(json_file_name=${JOBDIR}/metadata.json, output_dir=${JOBDIR});'\n"
     
     return results    

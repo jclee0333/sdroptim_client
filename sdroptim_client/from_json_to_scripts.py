@@ -22,6 +22,7 @@ def FullscriptsGenerator(json_file_name):
         generated_code = PyMod.from_gui_to_code(gui_params)        
         with open(jobpath+os.sep+job_title+'_generated.py', 'w') as f:
             f.write(prefix_generated_code+generated_code)
+            os.chmod(jobpath+os.sep+job_title+'_generated.py', 0o666) # add permission 201012
     #############################
         #############################
         ## make job script(sbatch)
@@ -29,6 +30,7 @@ def FullscriptsGenerator(json_file_name):
         jobscripts = PyMod.get_batch_script(gui_params)
         with open(jobpath+os.sep+'job.sh', 'w') as f:
             f.write(jobscripts)
+            os.chmod(jobpath+os.sep+'job.sh', 0o666) # add permission 201012
         #############################
     else: # if not hpo
         if gui_params['kernel'] == 'R':
@@ -40,6 +42,7 @@ def FullscriptsGenerator(json_file_name):
             generated_code = '[ERR] Empty kernel!'
         with open('generated.py', 'w') as f:
             f.write(generated_code)
+            os.chmod('generated.py', 0o666) # add permission 201012
 ####
 
 def get_default_generatedpy():
