@@ -213,12 +213,12 @@ def get_chart_html(args, with_df_csv=False, history="True", paramimpo="False"):
         args.output_dir = args.output_dir + (os.sep if args.output_dir[-1]!=os.sep else "")
     if with_df_csv:
         df.to_csv(args.output_dir+args.study_csv)
-        os.chmod(args.output_dir+args.study_csv, 0o770) # add permission 201012
+        os.chmod(args.output_dir+args.study_csv, 0o777) # add permission 201012
     #
     if history == "True":
         history_figure = history_plot(study, direction, chart_y_label)
         offplot(history_figure, filename = args.output_dir+args.optimhist_html, auto_open=False)
-        os.chmod(args.output_dir+args.optimhist_html, 0o770) # add permission 201012
+        os.chmod(args.output_dir+args.optimhist_html, 0o777) # add permission 201012
     #
     if paramimpo == "True":
         if webgui:
@@ -228,13 +228,13 @@ def get_chart_html(args, with_df_csv=False, history="True", paramimpo="False"):
                     try:
                         paramimportance_figure = mod_plot_param_importances(study, title=each_params[0], params=each_params[1])
                         offplot(paramimportance_figure, filename = args.output_dir+each_params[0]+"_"+args.paramimpo_html, auto_open=False)
-                        os.chmod(args.output_dir+each_params[0]+"_"+args.paramimpo_html, 0o770) # add permission 201012
+                        os.chmod(args.output_dir+each_params[0]+"_"+args.paramimpo_html, 0o777) # add permission 201012
                     except:
                         pass
         else:
             paramimportance_figure = plot_param_importances(study)
             offplot(paramimportance_figure, filename = args.output_dir+args.paramimpo_html, auto_open=False)
-            os.chmod(args.output_dir+args.paramimpo_html, 0o770) # add permission 201012
+            os.chmod(args.output_dir+args.paramimpo_html, 0o777) # add permission 201012
 
 
 
