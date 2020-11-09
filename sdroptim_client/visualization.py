@@ -235,6 +235,7 @@ def get_chart_html(args, with_df_csv=False, history="True", paramimpo="False"):
             paramimportance_figure = plot_param_importances(study)
             offplot(paramimportance_figure, filename = args.output_dir+args.paramimpo_html, auto_open=False)
             os.chmod(args.output_dir+args.paramimpo_html, 0o777) # add permission 201012
+    return True
 
 
 
@@ -261,7 +262,8 @@ def get_default_chart_html(json_file_name="", output_dir = "", study_csv="", opt
         args.optimhist_html = optimhist_html
     if paramimpo_html:
         args.paramimpo_html = paramimpo_html
-    get_chart_html(args, with_df_csv=True)
+    if get_chart_html(args, with_df_csv=True):
+        print("History HTML-Charts have been successively generated.")
 
 def get_all_chart_html(json_file_name="metadata.json", output_dir = "./", study_csv="", optimhist_html="", paramimpo_html=""):
     args=get_default_args()
@@ -275,7 +277,8 @@ def get_all_chart_html(json_file_name="metadata.json", output_dir = "./", study_
         args.optimhist_html = optimhist_html
     if paramimpo_html:
         args.paramimpo_html = paramimpo_html
-    get_chart_html(args, with_df_csv=True, history="True", paramimpo="True")
+    if get_chart_html(args, with_df_csv=True, history="True", paramimpo="True"):
+        print("History/ParamImpo HTML-Charts have been successively generated.")
 
 ####
 from collections import OrderedDict
