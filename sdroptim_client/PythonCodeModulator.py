@@ -441,7 +441,8 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     # auto-gen all chart when finished
     results+= "\n## Generate charts after job done\n"
     results+= "singularity exec --nv -H ${HOME}:/home/"+uname+" /EDISON/SCIDATA/singularity-images/userenv "
-    results+= "python -c 'from sdroptim_client import visualization as v;v.get_all_chart_html(json_file_name=${JOBDIR}/metadata.json, output_dir=${JOBDIR});'\n"
+    #results+= "python -c 'from sdroptim_client import visualization as v;v.get_all_chart_html(json_file_name=${JOBDIR}/metadata.json, output_dir=${JOBDIR});'\n"
+    results+= "python -c 'from sdroptim_client import visualization as v;v.get_all_chart_html();'\n"
     
     return results    
 #    
