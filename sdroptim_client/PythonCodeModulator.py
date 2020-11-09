@@ -404,6 +404,7 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
         f.write(sh_scripts)
     with open(jobpath+os.sep+job_title+"_get_all_chart.sh",'w') as f2:
         sh_scripts2 = jobdir+env_script +"cd ${JOBDIR}\npython -c 'from sdroptim_client import visualization as v;v.get_all_chart_html();'\n"
+        f2.write(sh_scripts2)
     #####################################################################################
     ## JOB init @ portal // modified 0812 --> deprecated @ 0.1.1 -> used in register function
     job_init ="\n## JOB init @ portal\n"
