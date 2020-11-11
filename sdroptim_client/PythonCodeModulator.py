@@ -406,7 +406,7 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     with open(jobpath+os.sep+"get_chart.sh",'w') as f2:
         something = '''from sdroptim_client import visualization as v;'''
         something+= '''success=v.get_all_chart_html(json_file_name="'''+jobpath+os.sep+'''metadata.json", output_dir="'''+jobpath+os.sep+'''");'''
-        something+= '''if success:    with open("'''+jobpath+os.sep+'''complete.log", "w") as f:;        f.write("complete")\n'''
+        #something+= '''if success:    with open("'''+jobpath+os.sep+'''complete.log", "w") as f:;        f.write("complete")'''
         #
         get_chart_script= "python3 -c '"+something+"'\n"
         #
