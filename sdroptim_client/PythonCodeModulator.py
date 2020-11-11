@@ -403,10 +403,10 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
         sh_scripts = jobdir+env_script +"cd ${JOBDIR}\npython ${JOBDIR}/"+job_title+"_generated"+".py\n"
         f.write(sh_scripts)
         os.chmod(jobpath+os.sep+job_title+"_run_in_singularity_image.sh", 0o777) # add permission 201012
-    #with open(jobpath+os.sep+"get_all_chart.sh",'w') as f2:
-    #    sh_scripts2 = jobdir+env_script +"python -c 'from sdroptim_client import visualization as v;v.get_all_chart_html();'\n"
-    #    f2.write(sh_scripts2)
-    #    os.chmod(jobpath+os.sep+"get_all_chart.sh", 0o777) # add permission 201012
+    with open(jobpath+os.sep+"get_chart.sh",'w') as f2:
+        get_chart_script= '''python3 -c 'from sdroptim_client import visualization as v;v.get_all_chart_html(json_file_name="'''+jobpath+os.sep+'''metadata.json", output_dir="'''+jobpath+os.sep+'''");'\n'''
+        f2.write(get_chart_script)
+        os.chmod(jobpath+os.sep+"get_chart.sh", 0o777) # add permission 201012
     #####################################################################################
     ## JOB init @ portal // modified 0812 --> deprecated @ 0.1.1 -> used in register function
     job_init ="\n## JOB init @ portal\n"
@@ -450,8 +450,9 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     #results+= '''python -c 'from sdroptim_client import visualization as v;v.get_all_chart_html(json_file_name="'''+jobdir+os.sep+'''metadata.json", output_dir="'''+jobdir+os.sep+'''");'\n'''
     # runtype 2
     #results+= "singularity exec --nv -H ${HOME}:/home/"+uname+" /EDISON/SCIDATA/singularity-images/userenv "
-    results+= '''python -c 'from sdroptim_client import visualization as v;v.get_all_chart_html(json_file_name="'''+jobpath+os.sep+'''metadata.json", output_dir="'''+jobpath+os.sep+'''");'\n'''
-
+    #results+= '''python3 -c 'from sdroptim_client import visualization as v;v.get_all_chart_html(json_file_name="'''+jobpath+os.sep+'''metadata.json", output_dir="'''+jobpath+os.sep+'''");'\n'''
+    results+= "curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/command-exec-de-job -d command='"
+    results+= jobpath+os.sep+"get_chart.sh'\n"
     
     return results    
 #    
