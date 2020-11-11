@@ -404,7 +404,12 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
         f.write(sh_scripts)
         os.chmod(jobpath+os.sep+job_title+"_run_in_singularity_image.sh", 0o777) # add permission 201012
     with open(jobpath+os.sep+"get_chart.sh",'w') as f2:
-        get_chart_script= '''python3 -c 'from sdroptim_client import visualization as v;v.get_all_chart_html(json_file_name="'''+jobpath+os.sep+'''metadata.json", output_dir="'''+jobpath+os.sep+'''");'\n'''
+        something = '''from sdroptim_client import visualization as v;'''
+        something+= '''success=v.get_all_chart_html(json_file_name="'''+jobpath+os.sep+'''metadata.json", output_dir="'''+jobpath+os.sep+'''");'''
+        something+= '''if success:    with open("'''+jobpath+os.sep+'''complete.log", "w") as f:;        f.write("complete")\n'''
+        #
+        get_chart_script= "python3 -c '"+something+"'\n"
+        #
         f2.write(get_chart_script)
         os.chmod(jobpath+os.sep+"get_chart.sh", 0o777) # add permission 201012
     #####################################################################################

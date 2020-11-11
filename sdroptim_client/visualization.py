@@ -279,6 +279,9 @@ def get_all_chart_html(json_file_name="metadata.json", output_dir = "./", study_
         args.paramimpo_html = paramimpo_html
     if get_chart_html(args, with_df_csv=True, history="True", paramimpo="True"):
         print("History/ParamImpo HTML-Charts have been successively generated.")
+        return True
+    else:
+        return False
 
 ####
 from collections import OrderedDict
