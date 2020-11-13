@@ -632,16 +632,58 @@ class Job(object):
             print("".join(temp))
             print("\n")
 
+    def show_job_details(self):
+        if hasattr(self, 'job_id'):
+            command = "scontrol show job "+str(self.job_id)
+            ###
+            command_api = "curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/command-exec-de-job -d command="
+            command = "'" + command +"'"
+            command_final = command_api+command
+            ###
+            stdout, stderr = self._execute_subprocess(command_final)
+            #print(stdout)
+            if len(stdout)>2:
+                res = stdout[1:-1]
+                dic={}
+                for each in res.split():
+                    print(each)
+                    kv=each.split("=")
+                    dic.update({kv[0]:kv[1]})
+                import pandas as pd
+                res_df=pd.DataFrame.from_dict(dic, orient='index').transpose()
+                return res_df
+        else:
+            raise ValueError("Slurm Job Not Found. Show job status failed.")
+
     def show_job_status(self):
         if hasattr(self, 'job_id'):
             command = "scontrol show job "+str(self.job_id)
-            stdout, stderr = self._execute_subprocess(command)
-            print(stdout)
+            ###
+            command_api = "curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/command-exec-de-job -d command="
+            command = "'" + command +"'"
+            command_final = command_api+command
+            ###
+            stdout, stderr = self._execute_subprocess(command_final)
+            #print(stdout)
+            if len(stdout)>2:
+                res = stdout[1:-1]
+                #dic={}
+                for each in res.split():
+                    #print(each)
+                    kv=each.split("=")
+                    if kv[0] == 'JobState':
+                        print(kv[1])
         else:
             raise ValueError("Slurm Job Not Found. Show job status failed.")
 
     def show_job_queue(self):
-        stdout, stderr = self._execute_subprocess("squeue")
+        command = "squeue"
+        ###
+        command_api = "curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/command-exec-de-job -d command="
+        command = "'" + command +"'"
+        command_final = command_api+command
+        ###
+        stdout, stderr = self._execute_subprocess(command_final)
         print(stdout)
 
     def _execute_subprocess(self, command):
