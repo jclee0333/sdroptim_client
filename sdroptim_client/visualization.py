@@ -221,6 +221,9 @@ def get_chart_html(args, with_df_csv=False, history="True", paramimpo="False"):
         os.chmod(args.output_dir+args.optimhist_html, 0o777) # add permission 201012
     #
     if paramimpo == "True":
+        if 'stepwise' in gui_params['hpo_system_attr']:
+            if gui_params['hpo_system_attr']['stepwise']==1:
+                return True
         if webgui:
             params_in_all_algorithms = get_params_list_from_multiple_algorithms_study(study)
             if len(params_in_all_algorithms)>=1:
@@ -266,6 +269,7 @@ def get_default_chart_html(json_file_name="", output_dir = "", study_csv="", opt
         print("History HTML-Charts have been successively generated.")
 
 def get_all_chart_html(json_file_name="metadata.json", output_dir = "./", study_csv="", optimhist_html="", paramimpo_html=""):
+    complete=False
     args=get_default_args()
     if json_file_name:
         args.json_file_name = json_file_name
@@ -281,7 +285,7 @@ def get_all_chart_html(json_file_name="metadata.json", output_dir = "./", study_
         print("History/ParamImpo HTML-Charts have been successively generated.")
         with open(output_dir+"complete.log","w") as f:
             f.write("complete")
-        os.chmod(output_dir+"complete.log", 0o776) # add permission 201012
+            os.chmod(output_dir+"complete.log", 0o776) # add permission 201012
     else:
         return False
 

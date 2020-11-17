@@ -10,6 +10,7 @@ import json, requests, base64
 import plotly.io as pio # for jupyterlab rendering
 from subprocess import (Popen, PIPE)
 import optuna
+import os
 
 def get_params(objective):
     '''
@@ -221,6 +222,7 @@ def set_params(objective, params=None, get_func_code=False):
             found = spec is not None
             if found:
                 module = importlib.util.module_from_spec(spec)
+            os.chmod('___temp_module___.py', 0o666) 
     except:
         raise ValueError("___temp_module___.py cannot be generated!")
     if get_func_code:
@@ -268,6 +270,7 @@ class Job(object):
         # default setting
         self.debug=True if debug else False
         pio.renderers.default = 'colab'
+        self.status="Before Running"
         #
         if not gui_params:
             gui_params = {'kernel':'Python','task':task_name, 'algorithm':[algorithm],'hpo_system_attr':{}} # set default 
@@ -306,6 +309,7 @@ class Job(object):
             jsonfile = json.dumps(gui_params)
             with open(jobpath+os.sep+'metadata.json', 'w') as f:
                 f.write(jsonfile)
+                os.chmod(jobpath+os.sep+'metadata.json', 0o666)
         else:
             #self.task_name = gui_params['task'] 
             #self.algorithm = gui_params['algorithm']
@@ -390,6 +394,7 @@ class Job(object):
         params_to_update_json = json.dumps(params_to_update)
         with open(self.job_path+os.sep+self.gui_params['hpo_system_attr']['searching_space'], 'w') as f:
             f.write(params_to_update_json)
+            os.chmod(self.job_path+os.sep+self.gui_params['hpo_system_attr']['searching_space'], 0o666)
         print("A searching space jsonfile has been generated.")
         #
         mod_func_stepwise=""
@@ -417,11 +422,13 @@ class Job(object):
         generated_code = generate_mpipy(objective_name=objective.__name__, userpy=gen_py_pathname, target_path=self.job_path, postfunc=mod_func_stepwise)
         with open(self.job_path+os.sep+self.job_title+'_generated.py', 'w') as f:
             f.write(generated_code)
+            os.chmod(self.job_path+os.sep+self.job_title+'_generated.py', 0o666)
         if generated_code:
             print("The Python Script for submit a job has been generated successively.")
         jsonfile = json.dumps(self.gui_params)
         with open(self.job_path+os.sep+'metadata.json', 'w') as f:
             f.write(jsonfile)
+            os.chmod(self.job_path+os.sep+'metadata.json', 0o666)
         if jsonfile:
             print("metadata.json has been updated successively.")
         else:
@@ -436,6 +443,7 @@ class Job(object):
         jobshfile_path= self.job_path+os.sep+'job.sh'
         with open(jobshfile_path, 'w') as f:
             f.write(jobscripts)
+            os.chmod(jobshfile_path, 0o666)
         # Set permission to run the script
         os.chmod(jobshfile_path, 0o777)
         if jobscripts:
@@ -474,6 +482,7 @@ class Job(object):
             jsonfile = json.dumps(self.gui_params)
             with open(self.job_path+os.sep+'metadata.json', 'w') as f:
                 f.write(jsonfile)
+                os.chmod(self.job_path+os.sep+'metadata.json', 0o666)
             ####
             if self.debug:
                 print("dejob_id = ",self.dejob_id)            
@@ -507,6 +516,7 @@ class Job(object):
                 jsonfile = json.dumps(self.gui_params)
                 with open(self.job_path+os.sep+'metadata.json', 'w') as f:
                     f.write(jsonfile)
+                    os.chmod(self.job_path+os.sep+'metadata.json', 0o666)
                 ####
                 return True
         else:
@@ -684,7 +694,9 @@ class Job(object):
         command_final = command_api+command
         ###
         stdout, stderr = self._execute_subprocess(command_final)
-        print(stdout)
+        squeue_indent = "             "
+        for each in stdout.split(squeue_indent):
+            print(each)
 
     def _execute_subprocess(self, command):
         process = Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=True)
@@ -767,12 +779,14 @@ def SubmitHPOjob(objective_or_setofobjectives, args):
     generated_code = from_userpy_to_mpipy(objective_name_list=objective_name_list, args=args, userpy=gen_py_pathname)
     with open(jobpath+os.sep+args.job_title+'_generated.py', 'w') as f:
         f.write(generated_code)
+        os.chmod(jobpath+os.sep+args.job_title+'_generated.py', 0o666)
     # 생성된 py에서 함수만 호출(class, def) -> 이전 함수 활용
     # 그리고 실행 함수 제작(mpirun 용)
     # 그리고나서 만들어진 metadata이용하여 batch script 생성
     jobscripts= get_batch_script(gui_params)
     with open(jobpath+os.sep+'job.sh', 'w') as f:
         f.write(jobscripts)
+        os.chmod(jobpath+os.sep+'job.sh', 0o666)
     ##
     ## 이후과정은 sbatch job.sh 실행하는 내용
     #results=run_job_script(user_name=gui_params['hpo_system_attr']['user_name'], dest_dir=jobpath)
@@ -812,6 +826,7 @@ def generates_metadata_json(args, dest_dir):
     try:
         with open(dest_dir+os.sep+"metadata.json", 'w') as f:
             f.write(results)
+            os.chmod(dest_dir+os.sep+"metadata.json", 0o666)
         print("Successively generated metadata jsonfile! -> metadata.json")
         token=True
     except:
@@ -944,3 +959,4 @@ def copytree(src, dst, symlinks = False, ignore = None):
             copytree(s, d, symlinks, ignore)
         else:
             shutil.copy2(s, d)
+            os.chmod(d, 0o666)

@@ -202,6 +202,7 @@ def generate_default_searching_space_file(out_file_pathname=None):
     try:
         with open(out_file_pathname, 'w') as f:
             f.write(default_strings)
+            os.chmod(out_file_pathname, 0o666)
         print("Successively generated default searching space! -> searching_space_automl.json")
     except:
         print("Cannot generate default searching space!")
