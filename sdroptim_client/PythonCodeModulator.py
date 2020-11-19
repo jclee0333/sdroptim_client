@@ -308,7 +308,8 @@ def get_jobpath_with_attr(gui_params=None, debug=False):
     if 'user_name' in gui_params['hpo_system_attr']:
         uname=gui_params['hpo_system_attr']['user_name'] 
     sname=gui_params['hpo_system_attr']['study_name'] if 'study_name' in gui_params['hpo_system_attr'] else str(uuid.uuid4())
-    job_title=sname+"_in_"+uname
+    #job_title=sname+"_in_"+uname
+    job_title = sname
     ##########################
     if 'workspace_name' in gui_params['hpo_system_attr']:
         wsname=gui_params['hpo_system_attr']['workspace_name'] # directory name (MANDATORY)    
