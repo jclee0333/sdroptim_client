@@ -299,7 +299,8 @@ def get_jobpath_with_attr(gui_params=None, debug=False):
             os.chmod(jobpath, 0o776) # add permission 201012
             #
         sname=gui_params['hpo_system_attr']['study_name'] if 'study_name' in gui_params['hpo_system_attr'] else str(uuid.uuid4())        
-        job_title = sname+"_in_"+uname
+        #job_title = sname+"_in_"+uname
+        job_title = sname
         wsname = "default_ws"
         return jobpath, (uname, sname, job_title, wsname, job_directory)
     ########################################################################        
