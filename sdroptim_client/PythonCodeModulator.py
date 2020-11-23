@@ -293,7 +293,7 @@ def get_jobpath_with_attr(gui_params=None, debug=False):
         else: # if it is first try -> generate it
             timenow = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
             job_directory = "job-"+timenow
-            jobpath = cwd+os.sep+"workspace/default_ws/job/job-"+timenow
+            jobpath = cwd+os.sep+"workspace/default_ws/job/jupyterhpo-"+timenow
         if not os.path.exists(jobpath):
             os.mkdir(jobpath)
             os.chmod(jobpath, 0o776) # add permission 201012
@@ -320,7 +320,7 @@ def get_jobpath_with_attr(gui_params=None, debug=False):
         job_directory=gui_params['hpo_system_attr']['job_directory'] # directory name
     else:
         timenow = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-        job_directory="job-"+timenow
+        job_directory="jupyterhpo-"+timenow
     if not os.path.exists(each+uname+'/workspace/'+str(wsname)+'/job/'):
         os.mkdir(each+uname+'/workspace/'+str(wsname)+'/job/')
     jobpath = each+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)
