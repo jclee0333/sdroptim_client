@@ -18,7 +18,7 @@ setup(
     author_email     = 'jclee@kisti.re.kr',
     url              = 'https://github.com/jclee0333/sdroptim_client',
     #download_url     = 'Git에 저장된 whl 배포용 압축파일',
-    packages        =   ['sdroptim_client'],
+    #packages        =   ['sdroptim_client'],
     package_data    =   {'sdroptim_client':['./sdroptim_client/conf/run_conf.json']},
     include_package_data = True,
     install_requires = ['optuna==2.0.0',
