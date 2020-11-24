@@ -26,7 +26,7 @@ setup(
                         'plotly',
                         'requests',
                         'pandas',],
-    data_files = [('', ['run_conf.json'])],
+    data_files = [('', ['sdroptim_client/run_conf.json'])],
     classifiers      = ['Programming Language :: Python :: 3.6',
                         'Intended Audience :: Korea Institute of Science and Technology Information',
                         'License :: MIT License']
