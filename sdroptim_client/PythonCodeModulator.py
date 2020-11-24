@@ -363,11 +363,24 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
         raise ValueError("A custom job should clarify the 'n_nodes' in the argument params={ 'hpo_system_attr':{'n_nodes': (int) } } ")        
     cpu_task = 1
     gpu_task = 1
+    n_cpu = 0
+    n_gpu = 0
     if len(cpuhas)>0:
         cpu_task = 2
+        n_cpu += 30
     if len(gpuhas)>0:
         gpu_task = 2
+        n_cpu += 2
+        n_gpu += 2
     n_nodes = gui_params['hpo_system_attr']['n_nodes']
+    ### 20201124 update n_cpu & n_gpu (and n_nodes)
+    gui_params['hpo_system_attr'].update({"n_cpu":n_cpu})
+    gui_params['hpo_system_attr'].update({"n_gpu":n_gpu})
+    jsonfile = json.dumps(gui_params)
+    with open(jobpath+os.sep+'metadata.json', 'w') as f:
+        f.write(jsonfile)
+        os.chmod(jobpath+os.sep+'metadata.json', 0o666)
+    ###
     n_tasks = n_nodes*cpu_task*gpu_task # n_tasks calculation for GUI-hpo
     if 'n_tasks' in gui_params['hpo_system_attr']: # n_tasks for jupyter-hpo
         n_tasks = gui_params['hpo_system_attr']['n_tasks']
