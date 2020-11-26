@@ -374,7 +374,6 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
         n_gpu += 2
     n_nodes = gui_params['hpo_system_attr']['n_nodes']
     ### 20201124 update n_cpu & n_gpu (and n_nodes)
-    import json, pickle
     #gui_params['hpo_system_attr'].update({"n_cpu":n_cpu})
     #gui_params['hpo_system_attr'].update({"n_gpu":n_gpu})
     #jsonfile = json.dumps(gui_params)
@@ -382,8 +381,9 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     #    f.write(jsonfile)
     #    os.chmod(jobpath+os.sep+'metadata.json', 0o666)
     resources = {'n_cpu':n_cpu, 'n_gpu':n_gpu}
+    res_json = json.dumps(resources)
     with open(jobpath+os.sep+'resources','w') as rf:
-        pickle.dump(resources, rf)
+        rf.write(res_json)
         os.chmod(jobpath+os.sep+'resources', 0o666)
     ##
     n_tasks = n_nodes*cpu_task*gpu_task # n_tasks calculation for GUI-hpo
