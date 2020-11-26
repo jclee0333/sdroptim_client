@@ -374,6 +374,7 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
         n_gpu += 2
     n_nodes = gui_params['hpo_system_attr']['n_nodes']
     ### 20201124 update n_cpu & n_gpu (and n_nodes)
+    import json, pickle
     #gui_params['hpo_system_attr'].update({"n_cpu":n_cpu})
     #gui_params['hpo_system_attr'].update({"n_gpu":n_gpu})
     #jsonfile = json.dumps(gui_params)
