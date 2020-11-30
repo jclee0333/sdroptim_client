@@ -332,28 +332,7 @@ def get_jobpath_with_attr(gui_params=None, debug=False):
 def get_batch_script(gui_params, debug=False, dejob_id=""):
     jobpath, (uname, sname, job_title, wsname, job_directory) = get_jobpath_with_attr(gui_params=gui_params, debug=debug)
     ###########################
-    #
     time_deadline_sec = gui_params['hpo_system_attr']['time_deadline_sec']
-    #
-    #if 'algorithm' in gui_params:
-    #    cpuhas = getAlgorithmListAccordingToResourceType(gui_params['algorithm'], 'cpu')
-    #    gpuhas = getAlgorithmListAccordingToResourceType(gui_params['algorithm'], 'gpu')
-    #else:
-    #    if 'n_nodes' in gui_params['hpo_system_attr']:
-    #        if 'task_type' in gui_params['hpo_system_attr']:
-    #            if gui_params['hpo_system_attr']['task_type']=='cpu':
-    #                cpuhas=1
-    #                gpuhas=0
-    #            elif gui_params['hpo_system_attr']['task_type']=='gpu':
-    #                cpuhas=0
-    #                gpuhas=1
-    #            elif gui_params['hpo_system_attr']['task_type']=='both':
-    #                cpuhas=1
-    #                gpuhas=1
-    #            else:
-    #                raise ValueError("A custom job should clarify the 'task_type' in the argument params={ 'hpo_system_attr':{'task_type': ~ } } ('cpu', 'gpu', or 'both')")
-    #    else:
-    #        raise ValueError("A custom job should clarify the 'n_nodes' in the argument params={ 'hpo_system_attr':{'n_nodes': (int) } } ")
     cpuhas=[]
     gpuhas=[]
     if 'algorithm' in gui_params:
@@ -370,7 +349,6 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
         n_cpu += 30
     if len(gpuhas)>0:
         gpu_task = 2
-        #n_cpu += 2
         n_gpu += 2
     n_nodes = gui_params['hpo_system_attr']['n_nodes']
     ### 20201124 update n_cpu & n_gpu (and n_nodes)
@@ -379,13 +357,6 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     jsonfile = json.dumps(gui_params)
     with open(jobpath+os.sep+'metadata.json', 'w') as f:
         f.write(jsonfile)
-        #os.chmod(jobpath+os.sep+'metadata.json', 0o666)
-    #resources = {'n_cpu':n_cpu, 'n_gpu':n_gpu}
-    #res_json = json.dumps(resources)
-    #with open(jobpath+os.sep+'resources','w') as rf:
-    #    rf.write(res_json)
-    #    os.chmod(jobpath+os.sep+'resources', 0o666)
-    ##
     n_tasks = n_nodes*cpu_task*gpu_task # n_tasks calculation for GUI-hpo
     if 'n_tasks' in gui_params['hpo_system_attr']: # n_tasks for jupyter-hpo
         n_tasks = gui_params['hpo_system_attr']['n_tasks']
@@ -398,7 +369,7 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     prefix+='#SBATCH --ntasks='+str(n_tasks)+'\n'
     prefix+='#SBATCH --ntasks-per-node='+str(int(n_tasks/n_nodes))+'\n'
     #prefix+='#SBATCH --gres=gpu:'+str(n_gpu)+'\n'
-    
+    #
     timed=datetime.timedelta(seconds=time_deadline_sec)
     n_days = timed.days
     rest_seconds = timed.seconds+ 360 # add marginal seconds (5min)
@@ -438,14 +409,24 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
         f2.write(get_chart_script)
         os.chmod(jobpath+os.sep+"get_chart.sh", 0o777) # add permission 201012
     #####################################################################################
-    ## JOB init @ portal // modified 0812 --> deprecated @ 0.1.1 -> used in register function
-    job_init ="\n## JOB init @ portal\n"
-    job_init+="deJobId=$(curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-submit-de-job "
-    job_init+="-d screenName="+uname+" "
-    job_init+="-d title="+job_title+" "
-    job_init+="-d targetType=82 " # 82 = HPO job
-    job_init+="-d workspaceName="+wsname+" "
-    job_init+="-d location="+jobpath+")\n\n"
+    ### JOB init @ portal // modified 0812 --> deprecated @ 0.1.1 -> used in register function
+    #job_init ="\n## JOB init @ portal\n"
+    #job_init+="deJobId=$(curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-submit-de-job "
+    #job_init+="-d screenName="+uname+" "
+    #job_init+="-d title="+job_title+" "
+    #job_init+="-d targetType=82 " # 82 = HPO job
+    #job_init+="-d workspaceName="+wsname+" "
+    #job_init+="-d location="+jobpath+")\n\n"
+    if not dejob_id:
+        if 'dejob_id' in gui_params['hpo_system_attr']:
+            dejob_id = gui_params['hpo_system_attr']['dejob_id']
+        else:
+            raise valueError("Modulator cannot get the dejob_id from metadata.json")
+    ### JOB RUNNING
+    job_running ="\n## Update the job status as 'RUNNING' @ portal_db\n"
+    job_running+="curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status "
+    job_running+="-d deJobId="+str(dejob_id)
+    job_running+=" -d Status=RUNNING\n"
     ##### mpirun command
     mpirun_command = "## mpirun command\n"
     mpirun_command+= "/usr/local/bin/mpirun -np " + str(n_tasks)
@@ -464,14 +445,28 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     # 
     ## JOB done @ portal
     job_done = "## JOB done @ portal\n"
-    job_done+= "curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status "
-    if dejob_id:
-        job_done+="-d deJobId="+str(dejob_id)
-    else:
-        job_done+="-d deJobId=${deJobId}"
-    job_done+=" -d Status=SUCCESS\n"
+    job_done += 'if [ ! "${error_code}" = "" ]; then\n'
+    job_done += '    echo ${error_code}\n'
+    job_done += '    echo "failed" > ${JOBDIR}/status\n'
+    job_done += '    curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status -d deJobId='+str(dejob_id)+' -d Status=FAILED\n'
+    job_done += 'else\n'
+    job_done += '    echo ${error_code}\n'
+    job_done += '    echo "finished" > ${JOBDIR}/status\n'
+    job_done += '    curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status -d deJobId='+str(dejob_id)+' -d Status=SUCCESS\n'
+    job_done += 'fi\n'
+    ##############
+    # deprecated 1130
+    #job_done+= "curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status "
+    #if dejob_id:
+    #   job_done+="-d deJobId="+str(dejob_id)
+    #else:
+    #    job_done+="-d deJobId=${deJobId}"
+    #job_done+=" -d Status=SUCCESS\n"
+    ##############
     #results = prefix+paths+(job_init if 'n_tasks' not in gui_params['hpo_system_attr'] else "")+mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" " + running_command + "\n\n"+job_done
-    results = prefix+paths+job_init+mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" " + running_command + "\n\n"+job_done
+    results = prefix+paths+job_running+mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" " + running_command \
+              + " || error_code=$?" \
+              + "\n\n"+job_done
     # job_init can be added when gui-hpo, while jupyter-hpo exploits its own python-api _request_submit_job()
     # auto-gen all chart when finished
     results+= "\n## Generate charts after job done\n"
@@ -484,7 +479,7 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     results+= "curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/command-exec-de-job -d command='"
     #results+= jobpath+os.sep+"get_chart.sh'\n" ## modified @ 1123
     results+= chart_directory+os.sep+"get_chart.sh'\n"
-    
+    #
     return results    
 #    
 
