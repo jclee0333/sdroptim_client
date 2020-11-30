@@ -439,7 +439,8 @@ class Job(object):
         if self._request_submit_job():
             print("Job has been registerd to the portal database.")
         # make jobscript(.sh) using dejob_id        
-        jobscripts= get_batch_script(gui_params=self.gui_params, debug=self.debug, dejob_id=self.dejob_id)
+        #jobscripts= get_batch_script(gui_params=self.gui_params, debug=self.debug, dejob_id=self.dejob_id)
+        jobscripts= get_batch_script(gui_params=self.gui_params, debug=self.debug)#, dejob_id=self.dejob_id) # deprecated: using dejob_id
         jobshfile_path= self.job_path+os.sep+'job.sh'
         with open(jobshfile_path, 'w') as f:
             f.write(jobscripts)
@@ -491,44 +492,63 @@ class Job(object):
         return True
 
     def _run_slurm_script(self):
-        if hasattr(self, 'dejob_id'):
-            user_id = get_user_id(debug=self.debug)
-            in_jupyter_prefix='/home/'
-            if in_jupyter_prefix in self.job_path: # using in jupyterlab
-                job_path_prefix = str(base64.b64decode('L0VESVNPTi9TQ0lEQVRBL3Nkci9kcmFmdC8='))[2:-1]
-                job_path = job_path_prefix+self.job_path.split(in_jupyter_prefix)[1]
-            else:
-                job_path = self.job_path
-            data = {
-              'screenName': user_id[0],
-              'location': job_path
-            }
-            if self.debug:
-                print(data)
-            print("Running Slurm script...")
-            response = requests.post('https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/slurm-de-job-run', data=data)
-            if response.status_code == 200:
-                with open(self.job_path+os.sep+"job.id", "r") as f: # load files in jupyterlab image
-                    self.job_id = int(f.readline())
-                print("The job_id is "+str(self.job_id))
-                #### update to gui_params
-                self.gui_params['hpo_system_attr'].update({'job_id':self.job_id})
-                jsonfile = json.dumps(self.gui_params)
-                with open(self.job_path+os.sep+'metadata.json', 'w') as f:
-                    f.write(jsonfile)
-                    os.chmod(self.job_path+os.sep+'metadata.json', 0o666)
-                ####
-                return True
+        user_id = get_user_id(debug=self.debug)
+        in_jupyter_prefix='/home/'
+        if in_jupyter_prefix in self.job_path: # using in jupyterlab
+            job_path_prefix = str(base64.b64decode('L0VESVNPTi9TQ0lEQVRBL3Nkci9kcmFmdC8='))[2:-1]
+            job_path = job_path_prefix+self.job_path.split(in_jupyter_prefix)[1]
         else:
-            raise ValueError("Slurm Job Not Found.")            
-        # waiting for slurm job id
-        #time.sleep(3)
-        #try:
-        #    with open(self.this_job_path+'/job.id','r') as f:
-        #        idstr = f.readline()
-        #    self.slurm_job_directory = int(idstr)
-        #except:
-        #    print("Slurm Job Not Found.")
+            job_path = self.job_path
+        data = {
+          'screenName': user_id[0],
+          'location': job_path
+        }
+        if self.debug:
+            print(data)
+        print("Running Slurm script...")
+        response = requests.post('https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/slurm-de-job-run', data=data)
+        if response.status_code == 200:
+            with open(self.job_path+os.sep+"job.id", "r") as f: # load files in jupyterlab image
+                self.job_id = int(f.readline())
+            print("The job_id is "+str(self.job_id))
+            #### update to gui_params
+            self.gui_params['hpo_system_attr'].update({'job_id':self.job_id})
+            jsonfile = json.dumps(self.gui_params)
+            with open(self.job_path+os.sep+'metadata.json', 'w') as f:
+                f.write(jsonfile)
+                os.chmod(self.job_path+os.sep+'metadata.json', 0o666)
+            ####
+            return True
+        #if hasattr(self, 'dejob_id'):
+        #    user_id = get_user_id(debug=self.debug)
+        #    in_jupyter_prefix='/home/'
+        #    if in_jupyter_prefix in self.job_path: # using in jupyterlab
+        #        job_path_prefix = str(base64.b64decode('L0VESVNPTi9TQ0lEQVRBL3Nkci9kcmFmdC8='))[2:-1]
+        #        job_path = job_path_prefix+self.job_path.split(in_jupyter_prefix)[1]
+        #    else:
+        #        job_path = self.job_path
+        #    data = {
+        #      'screenName': user_id[0],
+        #      'location': job_path
+        #    }
+        #    if self.debug:
+        #        print(data)
+        #    print("Running Slurm script...")
+        #    response = requests.post('https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/slurm-de-job-run', data=data)
+        #    if response.status_code == 200:
+        #        with open(self.job_path+os.sep+"job.id", "r") as f: # load files in jupyterlab image
+        #            self.job_id = int(f.readline())
+        #        print("The job_id is "+str(self.job_id))
+        #        #### update to gui_params
+        #        self.gui_params['hpo_system_attr'].update({'job_id':self.job_id})
+        #        jsonfile = json.dumps(self.gui_params)
+        #        with open(self.job_path+os.sep+'metadata.json', 'w') as f:
+        #            f.write(jsonfile)
+        #            os.chmod(self.job_path+os.sep+'metadata.json', 0o666)
+        #        ####
+        #        return True
+        #else:
+        #    raise ValueError("Slurm Job Not Found.")            
     def _get_nbname(self):
         from notebook import notebookapp
         import urllib
