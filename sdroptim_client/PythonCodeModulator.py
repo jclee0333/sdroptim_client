@@ -21,192 +21,191 @@ n_jobs = 15 # cpu jobs
 
 import json, uuid, os, datetime, base64
 
-def generate_default_searching_space_file(out_file_pathname=None):
-    default_strings='''{
-    "Regression":{
-        "MLR":
-        {
-        "cv":{"low":5, "high":5},
-        "fit_intercept":{"choices":["True","False"]},
-        "normalize":{"choices":["False","True"]}
-        },
-        "SVM":
-        {
-        "cv":{"low":5, "high":5},
-        "C":{"low":-10.0, "high":10.0, "transformation":"2**x"},
-        "kernel":{"choices":[ "rbf", "linear", "poly","sigmoid"]},
-        "degree":{"low":2, "high":5},
-        "gamma":{"low":-10.0, "high":10.0,"transformation":"2**x"},
-        "tol":{"low":-5,"high":-1, "transformation":"10**x"},
-        "__comment__epsilon":"The epsilon param is only for a regression task.",
-        "epsilon":{"low":0.01, "high":0.99}
-        },
-        "RF":
-        {
-        "cv":{"low":5, "high":5},
-        "n_estimators":{"low":1, "high":1000},
-        "criterion":{"choices":["mse", "mae"]},
-        "min_samples_split":{"low":0.0, "high":1.0},
-        "min_samples_leaf":{"low":0.0, "high":0.5}
-        },
-        "BT":
-        {
-        "cv":{"low":5, "high":5},
-        "n_estimators":{"low":1, "high":2000},
-        "learning_rate":{"low":1e-5, "high":1e-1},
-        "loss":{"choices":["linear","square","exponential"]}
-        },
-        "DL_Pytorch":
-        {
-        "cv":{"low":5, "high":5},
-        "model":{"choices":["FNN"]},
-        "batch_size":{"choices":[32,64,128,256]},
-        "epochs":{"choices":[5, 10, 20]},
-        "optimizer":{"choices":["Adam","RMSprop","SGD"]},
-        "lr":{"low":1e-5,"high":1e-1},
-        "momentum":{"low":0.0, "high":1.0},
-        "n_layers":{"low":1, "high":5},
-        "n_units":{"low":4, "high":128},
-        "dropout":{"low":0.01, "high":0.2},
-        "loss":{"choices":["MSELoss"]}
-        },
-        "XGBoost":
-        {
-        "cv":{"low":5, "high":5},
-        "__comment__":"general params: booster(type), objective",
-        "eval_metric":{"choices":["rmse"]},
-        "num_boost_round":{"choices":[100, 500, 1000, 2000]},
-        "booster":{"choices":["gbtree","dart"]},
-        "objective":{"choices":["reg:squarederror"]},
-        "__comment__regularization":"lambda(def=1) regarding L2 reg. weight, alpha(def=0) regarding L1 reg. weight",
-        "lambda":{"low":1e-8, "high":1.0},
-        "alpha":{"low":1e-8, "high":1.0},
-        "__comment__cv":"if cv, min_child_weight(def=1), max_depth(def=6) should be tuned",
-        "min_child_weight":{"low":0, "high":10},
-        "__comment__others":"[booster] Both gbtree and dart require max_depth, eta, gamma, and grow_policy. Only dart requires sample_type, normalize_type, rate_drop, and skip_drop.",
-        "max_depth":{"low":1, "high":9},
-        "eta":{"low":1e-8, "high":1.0},
-        "gamma":{"low":1e-8, "high":1.0},
-        "grow_policy":{"choices":["depthwise","lossguide"]},
-        "sample_type":{"choices":["uniform","weighted"]},
-        "normalize_type":{"choices":["tree","forest"]},
-        "rate_drop":{"low":1e-8, "high":1.0},
-        "skip_drop":{"low":1e-8, "high":1.0}
-        },
-        "LightGBM":
-        {
-        "cv":{"low":5, "high":5},
-        "objective":{"choices":["regression"]},
-        "num_boost_round":{"choices":[100,500,1000, 2000]},
-        "metric":{"choices":["rmse"]},
-        "boosting_type":{"choices":["gbdt", "dart", "goss"]},
-        "num_leaves":{"choices":[15,31,63,127,255]},
-        "max_depth":{"low":-1, "high":12},
-        "subsample_for_bin":{"choices":[20000, 50000, 100000, 200000]},
-        "min_child_weight":{"low":-4, "high":4, "transformation":"10**x"},
-        "min_child_samples":{"low":1, "high":100},
-        "subsample":{"low":0.2, "high":1.0}, 
-        "learning_rate":{"low":1e-5,"high":1e-1},
-        "colsample_bytree":{"low":0.2, "high":1.0}
-        }
-    },
-    "Classification":{
-        "SVM":
-        {
-        "cv":{"low":5, "high":5},
-        "__comment__":"default hyperparameters of SVM are selected from q0.05 to q0.95 @Tunability (P.Probst et al., 2019)",
-        "C":{"low":0.025, "high":943.704},
-        "kernel":{"choices":[ "rbf", "linear", "poly","sigmoid"]},
-        "degree":{"low":2, "high":4},
-        "gamma":{"low":0.007, "high":276.02},
-        "tol":{"low":-5,"high":-1, "transformation":"10**x"},
-        "class_weight":{"choices":["None", "balanced"]}
-        },
-        "RF":
-        {
-        "cv":{"low":5, "high":5},
-        "__comment__":"default hyperparameters of RF are selected from q0.05 to q0.95 @Tunability (P.Probst et al., 2019)",
-        "n_estimators":{"low":203, "high":1909},
-        "criterion":{"choices":["gini", "entropy"]},
-        "__comment__min_samples_split":"min_samples_split is sample.fraction in R(ranger)",
-        "min_samples_split":{"low":0.257,"high":0.971},
-        "__comment__max_feature":"max_features is mtry in R(ranger), but automatically transformed to int(max_features * n_features)",
-        "max_features":{"low":0.081, "high":0.867},
-        "__comment__min_samples_leaf":"mean_samples_leaf is min.node.size in R(ranger)",
-        "min_samples_leaf":{"low":0.009, "high":0.453}
-        },
-        "BT":
-        {
-        "cv":{"low":5, "high":5},
-        "n_estimators":{"low":1, "high":2000},
-        "learning_rate":{"low":1e-5, "high":1e-1},
-        "algorithm":{"choices":["SAMME.R","SAMME"]}
-        },
-        "DL_Pytorch":
-        {
-        "cv":{"low":5, "high":5},
-        "model":{"choices":["FNN","CNN"]},
-        "batch_size":{"choices":[32,64,128,256]},
-        "epochs":{"choices":[5, 10, 20]},
-        "optimizer":{"choices":["Adam","RMSprop","SGD"]},
-        "lr":{"low":1e-5,"high":1e-1},
-        "momentum":{"low":0.0, "high":1.0},
-        "n_layers":{"low":1, "high":3},
-        "n_units":{"low":4, "high":128},
-        "dropout":{"low":0.01, "high":0.2},
-        "loss":{"choices":["cross_entropy"]}
-        },
-        "XGBoost":
-        {
-        "cv":{"low":5, "high":5},
-        "__comment__":"general params: booster(type), objective",
-        "eval_metric":{"choices":["mlogloss"]},
-        "num_boost_round":{"choices":[100, 500, 1000, 2000]},
-        "booster":{"choices":["gbtree","dart"]},
-        "objective":{"choices":["multi:softmax"]},
-        "__comment__regularization":"lambda(def=1) regarding L2 reg. weight, alpha(def=0) regarding L1 reg. weight",
-        "lambda":{"low":1e-8, "high":1.0},
-        "alpha":{"low":1e-8, "high":1.0},
-        "__comment__cv":"if cv, min_child_weight(def=1), max_depth(def=6) should be tuned",
-        "min_child_weight":{"low":0, "high":10},
-        "__comment__others":"[booster] Both gbtree and dart require max_depth, eta, gamma, and grow_policy. Only dart requires sample_type, normalize_type, rate_drop, and skip_drop.",
-        "max_depth":{"low":1, "high":9},
-        "eta":{"low":1e-8, "high":1.0},
-        "gamma":{"low":1e-8, "high":1.0},
-        "grow_policy":{"choices":["depthwise","lossguide"]},
-        "sample_type":{"choices":["uniform","weighted"]},
-        "normalize_type":{"choices":["tree","forest"]},
-        "rate_drop":{"low":1e-8, "high":1.0},
-        "skip_drop":{"low":1e-8, "high":1.0}
-        },
-        "LightGBM":
-        {
-        "cv":{"low":5, "high":5},
-        "objective":{"choices":["multiclass"]},
-        "num_boost_round":{"choices":[100,500,1000, 2000]},
-        "metric":{"choices":["multi_logloss"]},
-        "boosting_type":{"choices":["gbdt", "dart", "goss"]},
-        "num_leaves":{"choices":[15,31,63,127,255]},
-        "max_depth":{"low":-1, "high":12},
-        "subsample_for_bin":{"choices":[20000, 50000, 100000, 200000]},
-        "class_weight":{"choices":["None", "balanced"]},
-        "min_child_weight":{"low":-4, "high":4, "transformation":"10**x"},
-        "min_child_samples":{"low":1, "high":100},
-        "subsample":{"low":0.2, "high":1.0}, 
-        "learning_rate":{"low":1e-5,"high":1e-1},
-        "colsample_bytree":{"low":0.2, "high":1.0}
-        }
-    }
-}
-'''
+def generate_default_searching_space_file(out_file_pathname=None, cv_flag=True):
+    results  ='{\n'
+    results +='    "Regression":{\n'
+    results +='        "MLR":\n'
+    results +='        {\n'
+    results +='        "cv":{"low":5, "high":5},\n' if cv_flag else ""
+    results +='        "fit_intercept":{"choices":["True","False"]},\n'
+    results +='        "normalize":{"choices":["False","True"]}\n'
+    results +='        },\n'
+    results +='        "SVM":\n'
+    results +='        {\n'
+    results +='        "cv":{"low":5, "high":5},\n' if cv_flag else ""
+    results +='        "C":{"low":-10.0, "high":10.0, "transformation":"2**x"},\n'
+    results +='        "kernel":{"choices":[ "rbf", "linear", "poly","sigmoid"]},\n'
+    results +='        "degree":{"low":2, "high":5},\n'
+    results +='        "gamma":{"low":-10.0, "high":10.0,"transformation":"2**x"},\n'
+    results +='        "tol":{"low":-5,"high":-1, "transformation":"10**x"},\n'
+    results +='        "__comment__epsilon":"The epsilon param is only for a regression task.",\n'
+    results +='        "epsilon":{"low":0.01, "high":0.99}\n'
+    results +='        },\n'
+    results +='        "RF":\n'
+    results +='        {\n'
+    results +='        "cv":{"low":5, "high":5},\n' if cv_flag else ""
+    results +='        "n_estimators":{"low":1, "high":1000},\n'
+    results +='        "criterion":{"choices":["mse", "mae"]},\n'
+    results +='        "min_samples_split":{"low":0.0, "high":1.0},\n'
+    results +='        "min_samples_leaf":{"low":0.0, "high":0.5}\n'
+    results +='        },\n'
+    results +='        "BT":\n'
+    results +='        {\n'
+    results +='        "cv":{"low":5, "high":5},\n' if cv_flag else ""
+    results +='        "n_estimators":{"low":1, "high":2000},\n'
+    results +='        "learning_rate":{"low":1e-5, "high":1e-1},\n'
+    results +='        "loss":{"choices":["linear","square","exponential"]}\n'
+    results +='        },\n'
+    results +='        "DL_Pytorch":\n'
+    results +='        {\n'
+    results +='        "cv":{"low":5, "high":5},\n' if cv_flag else ""
+    results +='        "model":{"choices":["FNN"]},\n'
+    results +='        "batch_size":{"choices":[32,64,128,256]},\n'
+    results +='        "epochs":{"choices":[5, 10, 20]},\n'
+    results +='        "optimizer":{"choices":["Adam","RMSprop","SGD"]},\n'
+    results +='        "lr":{"low":1e-5,"high":1e-1},\n'
+    results +='        "momentum":{"low":0.0, "high":1.0},\n'
+    results +='        "n_layers":{"low":1, "high":5},\n'
+    results +='        "n_units":{"low":4, "high":128},\n'
+    results +='        "dropout":{"low":0.01, "high":0.2},\n'
+    results +='        "loss":{"choices":["MSELoss"]}\n'
+    results +='        },\n'
+    results +='        "XGBoost":\n'
+    results +='        {\n'
+    results +='        "cv":{"low":5, "high":5},\n' if cv_flag else ""
+    results +='        "__comment__":"general params: booster(type), objective",\n'
+    results +='        "eval_metric":{"choices":["rmse"]},\n'
+    results +='        "num_boost_round":{"choices":[100, 500, 1000, 2000]},\n'
+    results +='        "booster":{"choices":["gbtree","dart"]},\n'
+    results +='        "objective":{"choices":["reg:squarederror"]},\n'
+    results +='        "__comment__regularization":"lambda(def=1) regarding L2 reg. weight, alpha(def=0) regarding L1 reg. weight",\n'
+    results +='        "lambda":{"low":1e-8, "high":1.0},\n'
+    results +='        "alpha":{"low":1e-8, "high":1.0},\n'
+    results +='        "__comment__cv":"if cv, min_child_weight(def=1), max_depth(def=6) should be tuned",\n'
+    results +='        "min_child_weight":{"low":0, "high":10},\n'
+    results +='        "__comment__others":"[booster] Both gbtree and dart require max_depth, eta, gamma, and grow_policy. Only dart requires sample_type, normalize_type, rate_drop, and skip_drop.",\n'
+    results +='        "max_depth":{"low":1, "high":9},\n'
+    results +='        "eta":{"low":1e-8, "high":1.0},\n'
+    results +='        "gamma":{"low":1e-8, "high":1.0},\n'
+    results +='        "grow_policy":{"choices":["depthwise","lossguide"]},\n'
+    results +='        "sample_type":{"choices":["uniform","weighted"]},\n'
+    results +='        "normalize_type":{"choices":["tree","forest"]},\n'
+    results +='        "rate_drop":{"low":1e-8, "high":1.0},\n'
+    results +='        "skip_drop":{"low":1e-8, "high":1.0}\n'
+    results +='        },\n'
+    results +='        "LightGBM":\n'
+    results +='        {\n'
+    results +='        "cv":{"low":5, "high":5},\n' if cv_flag else ""
+    results +='        "objective":{"choices":["regression"]},\n'
+    results +='        "num_boost_round":{"choices":[100,500,1000, 2000]},\n'
+    results +='        "metric":{"choices":["rmse"]},\n'
+    results +='        "boosting_type":{"choices":["gbdt", "dart", "goss"]},\n'
+    results +='        "num_leaves":{"choices":[15,31,63,127,255]},\n'
+    results +='        "max_depth":{"low":-1, "high":12},\n'
+    results +='        "subsample_for_bin":{"choices":[20000, 50000, 100000, 200000]},\n'
+    results +='        "min_child_weight":{"low":-4, "high":4, "transformation":"10**x"},\n'
+    results +='        "min_child_samples":{"low":1, "high":100},\n'
+    results +='        "subsample":{"low":0.2, "high":1.0}, \n'
+    results +='        "learning_rate":{"low":1e-5,"high":1e-1},\n'
+    results +='        "colsample_bytree":{"low":0.2, "high":1.0}\n'
+    results +='        }\n'
+    results +='    },\n'
+    results +='    "Classification":{\n'
+    results +='        "SVM":\n'
+    results +='        {\n'
+    results +='        "cv":{"low":5, "high":5},\n' if cv_flag else ""
+    results +='        "__comment__":"default hyperparameters of SVM are selected from q0.05 to q0.95 @Tunability (P.Probst et al., 2019)",\n'
+    results +='        "C":{"low":0.025, "high":943.704},\n'
+    results +='        "kernel":{"choices":[ "rbf", "linear", "poly","sigmoid"]},\n'
+    results +='        "degree":{"low":2, "high":4},\n'
+    results +='        "gamma":{"low":0.007, "high":276.02},\n'
+    results +='        "tol":{"low":-5,"high":-1, "transformation":"10**x"},\n'
+    results +='        "class_weight":{"choices":["None", "balanced"]}\n'
+    results +='        },\n'
+    results +='        "RF":\n'
+    results +='        {\n'
+    results +='        "cv":{"low":5, "high":5},\n' if cv_flag else ""
+    results +='        "__comment__":"default hyperparameters of RF are selected from q0.05 to q0.95 @Tunability (P.Probst et al., 2019)",\n'
+    results +='        "n_estimators":{"low":203, "high":1909},\n'
+    results +='        "criterion":{"choices":["gini", "entropy"]},\n'
+    results +='        "__comment__min_samples_split":"min_samples_split is sample.fraction in R(ranger)",\n'
+    results +='        "min_samples_split":{"low":0.257,"high":0.971},\n'
+    results +='        "__comment__max_feature":"max_features is mtry in R(ranger), but automatically transformed to int(max_features * n_features)",\n'
+    results +='        "max_features":{"low":0.081, "high":0.867},\n'
+    results +='        "__comment__min_samples_leaf":"mean_samples_leaf is min.node.size in R(ranger)",\n'
+    results +='        "min_samples_leaf":{"low":0.009, "high":0.453}\n'
+    results +='        },\n'
+    results +='        "BT":\n'
+    results +='        {\n'
+    results +='        "cv":{"low":5, "high":5},\n' if cv_flag else ""
+    results +='        "n_estimators":{"low":1, "high":2000},\n'
+    results +='        "learning_rate":{"low":1e-5, "high":1e-1},\n'
+    results +='        "algorithm":{"choices":["SAMME.R","SAMME"]}\n'
+    results +='        },\n'
+    results +='        "DL_Pytorch":\n'
+    results +='        {\n'
+    results +='        "cv":{"low":5, "high":5},\n' if cv_flag else ""
+    results +='        "model":{"choices":["FNN","CNN"]},\n'
+    results +='        "batch_size":{"choices":[32,64,128,256]},\n'
+    results +='        "epochs":{"choices":[5, 10, 20]},\n'
+    results +='        "optimizer":{"choices":["Adam","RMSprop","SGD"]},\n'
+    results +='        "lr":{"low":1e-5,"high":1e-1},\n'
+    results +='        "momentum":{"low":0.0, "high":1.0},\n'
+    results +='        "n_layers":{"low":1, "high":3},\n'
+    results +='        "n_units":{"low":4, "high":128},\n'
+    results +='        "dropout":{"low":0.01, "high":0.2},\n'
+    results +='        "loss":{"choices":["cross_entropy"]}\n'
+    results +='        },\n'
+    results +='        "XGBoost":\n'
+    results +='        {\n'
+    results +='        "cv":{"low":5, "high":5},\n' if cv_flag else ""
+    results +='        "__comment__":"general params: booster(type), objective",\n'
+    results +='        "eval_metric":{"choices":["mlogloss"]},\n'
+    results +='        "num_boost_round":{"choices":[100, 500, 1000, 2000]},\n'
+    results +='        "booster":{"choices":["gbtree","dart"]},\n'
+    results +='        "objective":{"choices":["multi:softmax"]},\n'
+    results +='        "__comment__regularization":"lambda(def=1) regarding L2 reg. weight, alpha(def=0) regarding L1 reg. weight",\n'
+    results +='        "lambda":{"low":1e-8, "high":1.0},\n'
+    results +='        "alpha":{"low":1e-8, "high":1.0},\n'
+    results +='        "__comment__cv":"if cv, min_child_weight(def=1), max_depth(def=6) should be tuned",\n'
+    results +='        "min_child_weight":{"low":0, "high":10},\n'
+    results +='        "__comment__others":"[booster] Both gbtree and dart require max_depth, eta, gamma, and grow_policy. Only dart requires sample_type, normalize_type, rate_drop, and skip_drop.",\n'
+    results +='        "max_depth":{"low":1, "high":9},\n'
+    results +='        "eta":{"low":1e-8, "high":1.0},\n'
+    results +='        "gamma":{"low":1e-8, "high":1.0},\n'
+    results +='        "grow_policy":{"choices":["depthwise","lossguide"]},\n'
+    results +='        "sample_type":{"choices":["uniform","weighted"]},\n'
+    results +='        "normalize_type":{"choices":["tree","forest"]},\n'
+    results +='        "rate_drop":{"low":1e-8, "high":1.0},\n'
+    results +='        "skip_drop":{"low":1e-8, "high":1.0}\n'
+    results +='        },\n'
+    results +='        "LightGBM":\n'
+    results +='        {\n'
+    results +='        "cv":{"low":5, "high":5},\n' if cv_flag else ""
+    results +='        "objective":{"choices":["multiclass"]},\n'
+    results +='        "num_boost_round":{"choices":[100,500,1000, 2000]},\n'
+    results +='        "metric":{"choices":["multi_logloss"]},\n'
+    results +='        "boosting_type":{"choices":["gbdt", "dart", "goss"]},\n'
+    results +='        "num_leaves":{"choices":[15,31,63,127,255]},\n'
+    results +='        "max_depth":{"low":-1, "high":12},\n'
+    results +='        "subsample_for_bin":{"choices":[20000, 50000, 100000, 200000]},\n'
+    results +='        "class_weight":{"choices":["None", "balanced"]},\n'
+    results +='        "min_child_weight":{"low":-4, "high":4, "transformation":"10**x"},\n'
+    results +='        "min_child_samples":{"low":1, "high":100},\n'
+    results +='        "subsample":{"low":0.2, "high":1.0}, \n'
+    results +='        "learning_rate":{"low":1e-5,"high":1e-1},\n'
+    results +='        "colsample_bytree":{"low":0.2, "high":1.0}\n'
+    results +='        }\n'
+    results +='    }\n'
+    results +='}\n'
     try:
         with open(out_file_pathname, 'w') as f:
-            f.write(default_strings)
+            f.write(results)
             os.chmod(out_file_pathname, 0o666)
         print("Successively generated default searching space! -> searching_space_automl.json")
     except:
         print("Cannot generate default searching space!")
-    return default_strings
+    return results
 
 def from_userpy_to_mpipy(objective_name_list, userpy):
     import ast, astunparse
@@ -993,7 +992,6 @@ def getObjectiveFunction_(resources, gui_params, indirect=False, stepwise=False,
         results += '    import secrets\t# using built-in func. over py_3.6.3\n'
         results += '    algorithm_names = '+str(gui_params['algorithm']) + '\n'
         results += '    algorithm_name = secrets.choice(algorithm_names)\n'
-
     if 'hpo_system_attr' in gui_params:
         jobpath, (uname, sname, job_title, wsname, job_directory) = get_jobpath_with_attr(gui_params)
         if 'ss_json_name' in gui_params['hpo_system_attr']:
@@ -1001,7 +999,16 @@ def getObjectiveFunction_(resources, gui_params, indirect=False, stepwise=False,
         else: # using default
             searching_space_json = jobpath+os.sep+'searching_space_automl.json'
             if not os.path.exists(searching_space_json):
-                generate_default_searching_space_file(searching_space_json)
+                ## check cv_flag
+                import pandas as pd
+                nrow=len(pd.read_csv(gui_params['ml_file_name']))
+                train_nrow=int(nrow*(1-gui_params['testing_frame_rate']))
+                if train_nrow < 10:
+                    cv_flag = False
+                else:
+                    cv_flag = True
+                ##
+                generate_default_searching_space_file(searching_space_json, cv_flag)
     #
     with open(searching_space_json, 'r') as __:
         searching_space = json.load(__)
