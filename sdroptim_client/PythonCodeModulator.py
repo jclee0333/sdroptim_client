@@ -1075,12 +1075,12 @@ def getObjectiveFunction_(resources, gui_params, indirect=False, stepwise=False,
             else:
                 rval_score_str = "[predicted, test_data[target]]"
         else:
+            ori_rval_score_str = "confidence"
             if each_algorithm in ['XGBoost','LightGBM']:
                 rval_score_str = "[predicted, y_test]"
             elif each_algorithm == 'DL_Pytorch':
                 rval_score_str = "[vs_test_loader['Predicted'], vs_test_loader['Actual']]"
             else:
-                ori_rval_score_str = "confidence"
                 rval_score_str = "[predicted, test_data[target]]"
         #
         model_name = "model" if each_algorithm == 'DL_Pytorch' else "clf"
