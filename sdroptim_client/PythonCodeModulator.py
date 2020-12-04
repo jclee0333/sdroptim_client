@@ -1079,7 +1079,8 @@ def getObjectiveFunction_(resources, gui_params, indirect=False, stepwise=False,
             if each_algorithm in ['XGBoost','LightGBM']:
                 rval_score_str = "[predicted, y_test]"
             elif each_algorithm == 'DL_Pytorch':
-                rval_score_str = "[vs_test_loader['Predicted'], vs_test_loader['Actual']]"
+                #rval_score_str = "[vs_test_loader['Predicted'], vs_test_loader['Actual']]"
+                rval_score_str = "[vs['Predicted'], vs['Actual']]"
             else:
                 rval_score_str = "[predicted, test_data[target]]"
         #
