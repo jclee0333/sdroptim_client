@@ -1341,7 +1341,7 @@ def getLightGBM_TrainFunc(gui_params, cv_num, for_hpo_tune=False, prune_availabl
     predict = "predicted = clf.predict(" + ("X_test" if cv_num<1 else "X_train[valid_index]") + ")\n"
     predict += "predicted = np.argmax(predicted, axis=1)\n" if gui_params['task'] == 'Classification' else ""
     predict += "vs = pd.DataFrame(np.c_[predicted, "+("y_test" if cv_num<1 else "y_train[valid_index]") + "], columns = ['Predicted', 'Actual'])\n" # add 1106
-    predict += "global_vs = global_vs.append(vs)\n" # add 1106
+    predict += "global_vs = global_vs.append(vs)\n" if cv_num > 1 else ""# add 1106
     if gui_params['task'] == 'Regression':
         confidence = "confidence = sklearn.metrics.r2_score(predicted, " + ("y_test" if cv_num<1 else "y_train[valid_index]") + ")\n"
     elif gui_params['task'] == 'Classification':
@@ -1468,7 +1468,7 @@ def getXGBoost_TrainFunc(gui_params, cv_num, for_hpo_tune=False, prune_available
              + "evals=["+ ("(dtest, 'valid')" if cv_num<1 else "(dvalid, 'valid')")  + "]" + (", callbacks=[pruning_callback]" if prune_available else "") + ")\n"
     predict = "predicted = clf.predict(" + ("dtest" if cv_num<1 else "dvalid") + ")\n"
     predict += "vs = pd.DataFrame(np.c_[predicted, "+("y_test" if cv_num<1 else "y_train[valid_index]") + "], columns = ['Predicted', 'Actual'])\n" # add 1106
-    predict += "global_vs = global_vs.append(vs)\n" # add 1106
+    predict += "global_vs = global_vs.append(vs)\n" if cv_num >1 else ""# add 1106
     if gui_params['task'] == 'Regression':
         confidence = "confidence = sklearn.metrics.r2_score(predicted, " + ("y_test" if cv_num<1 else "y_train[valid_index]") + ")\n"
     elif gui_params['task'] == 'Classification':
@@ -1732,7 +1732,8 @@ def getDLPytorch_TestFunc(gui_params, loader_name, cv_num, indirect=False):
     results += "        y_true_list += label.cpu().numpy().tolist()\n"
     vs_loader_name = "vs"+("" if loader_name == 'test_loader' else "_"+loader_name)
     results += vs_loader_name +" = pd.DataFrame(np.c_[y_pred_list, y_true_list], columns=['Predicted', 'Actual'])\n"
-    results += "global_vs = global_vs.append("+vs_loader_name+")\n"
+    if cv_num > 1:
+        results += "global_vs = global_vs.append("+vs_loader_name+")\n"
     results += "confidence"+("" if loader_name == 'test_loader' else "_"+loader_name)
     # binary classification 의 f1 score case 적용이 필요함
     results += " = metrics.r2_score("+vs_loader_name+"['Actual'], "+vs_loader_name+"['Predicted'])\n" if gui_params['task']=='Regression' else " = metrics.f1_score("+vs_loader_name+"['Actual'], "+vs_loader_name+"['Predicted'], average='macro')\n"
