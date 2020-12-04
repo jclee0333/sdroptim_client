@@ -1126,7 +1126,7 @@ def getMultipleLinearRegression(gui_params, for_hpo_tune=False):
     results = results +'''
 ##* Predict using the model we made.
 predicted = clf.predict(test_data[features])
-confidence = metrics.r2_score(predicted, test_data[target])\t# Returns the coefficient of determination R^2 of the prediction.
+confidence = metrics.r2_score(test_data[target], predicted)\t# Returns the coefficient of determination R^2 of the prediction.
 '''
     if not for_hpo_tune:
         results = results + 'print("Prediction accuracy: ", confidence)\n'
@@ -1157,8 +1157,8 @@ def getSupportVectorMachine(gui_params, for_hpo_tune=False):
 ##* Predict using the model we made.
 predicted = clf.predict(test_data[features])
 '''
-    results += "confidence = metrics.r2_score(predicted, test_data[target])\t# Returns the coefficient of determination R^2 of the prediction." if gui_params['task'] == 'Regression' else \
-        "confidence = metrics.f1_score(predicted, test_data[target], average='macro')\t# Returns mean f1-score."
+    results += "confidence = metrics.r2_score(test_data[target], predicted)\t# Returns the coefficient of determination R^2 of the prediction." if gui_params['task'] == 'Regression' else \
+        "confidence = metrics.f1_score(test_data[target], predicted, average='macro')\t# Returns mean f1-score."
 
     if not for_hpo_tune:
         results = results + 'print("Prediction accuracy: ", confidence)\n'
@@ -1189,8 +1189,8 @@ def getRandomForest(gui_params, for_hpo_tune=False):
 ##* Predict using the model we made.
 predicted = clf.predict(test_data[features])
 '''
-    results += "confidence = metrics.r2_score(predicted, test_data[target])\t# Returns the coefficient of determination R^2 of the prediction." if gui_params['task'] == 'Regression' else \
-        "confidence = metrics.f1_score(predicted, test_data[target], average='macro')\t# Returns mean f1-score."
+    results += "confidence = metrics.r2_score(test_data[target], predicted)\t# Returns the coefficient of determination R^2 of the prediction." if gui_params['task'] == 'Regression' else \
+        "confidence = metrics.f1_score(test_data[target], predicted, average='macro')\t# Returns mean f1-score."
 
     if not for_hpo_tune:
         results = results + 'print("Prediction accuracy: ", confidence)\n'
@@ -1223,8 +1223,8 @@ def getBoostedTrees(gui_params, for_hpo_tune=False):
 ##* Predict using the model we made.
 predicted = clf.predict(test_data[features])
 '''
-    results += "confidence = metrics.r2_score(predicted, test_data[target])\t# Returns the coefficient of determination R^2 of the prediction." if gui_params['task'] == 'Regression' else \
-        "confidence = metrics.f1_score(predicted, test_data[target], average='macro')\t# Returns mean f1-score."
+    results += "confidence = metrics.r2_score(test_data[target], predicted)\t# Returns the coefficient of determination R^2 of the prediction." if gui_params['task'] == 'Regression' else \
+        "confidence = metrics.f1_score(test_data[target], predicted, average='macro')\t# Returns mean f1-score."
 
     if not for_hpo_tune:
         results = results + 'print("Prediction accuracy: ", confidence)\n'
@@ -1344,9 +1344,9 @@ def getLightGBM_TrainFunc(gui_params, cv_num, for_hpo_tune=False, prune_availabl
     predict += "vs = pd.DataFrame(np.c_[predicted, "+("y_test" if cv_num<1 else "y_train[valid_index]") + "], columns = ['Predicted', 'Actual'])\n" # add 1106
     predict += "global_vs = global_vs.append(vs)\n" if cv_num > 1 else ""# add 1106
     if gui_params['task'] == 'Regression':
-        confidence = "confidence = metrics.r2_score(predicted, " + ("y_test" if cv_num<1 else "y_train[valid_index]") + ")\n"
+        confidence = "confidence = metrics.r2_score(" + ("y_test" if cv_num<1 else "y_train[valid_index]") + ", predicted)\n"
     elif gui_params['task'] == 'Classification':
-        confidence = "confidence = metrics.f1_score(predicted, " + ("y_test" if cv_num<1 else "y_train[valid_index]") + ", average='macro')\n"
+        confidence = "confidence = metrics.f1_score(" + ("y_test" if cv_num<1 else "y_train[valid_index]") + ", predicted, average='macro')\n"
     confidence += "scores.append(confidence)" if cv_num>1 else ""
     val = train + predict + confidence
     if cv_num>1:
@@ -1471,9 +1471,9 @@ def getXGBoost_TrainFunc(gui_params, cv_num, for_hpo_tune=False, prune_available
     predict += "vs = pd.DataFrame(np.c_[predicted, "+("y_test" if cv_num<1 else "y_train[valid_index]") + "], columns = ['Predicted', 'Actual'])\n" # add 1106
     predict += "global_vs = global_vs.append(vs)\n" if cv_num >1 else ""# add 1106
     if gui_params['task'] == 'Regression':
-        confidence = "confidence = metrics.r2_score(predicted, " + ("y_test" if cv_num<1 else "y_train[valid_index]") + ")\n"
+        confidence = "confidence = metrics.r2_score(" + ("y_test" if cv_num<1 else "y_train[valid_index]") + ", predicted)\n"
     elif gui_params['task'] == 'Classification':
-        confidence = "confidence = metrics.f1_score(predicted, " + ("y_test" if cv_num<1 else "y_train[valid_index]") + ", average='macro')\n"
+        confidence = "confidence = metrics.f1_score(" + ("y_test" if cv_num<1 else "y_train[valid_index]") + ", predicted, average='macro')\n"
     confidence += "scores.append(confidence)" if cv_num>1 else ""
     val = train + predict + confidence
     if cv_num>1:
