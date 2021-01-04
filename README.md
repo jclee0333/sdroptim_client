@@ -9,23 +9,21 @@ An example of a metadata(json)
 
 --------------------------------
 (Usage:)
-[w]#python
+> python
 Python 3.7.6 | packaged by conda-forge | (default, Jun  1 2020, 18:57:50) 
 [GCC 7.5.0] on linux
 Type "help", "copyright", "credits" or "license" for more information.
->>> import sdroptim_client as sc
->>> sc.get_default_generatedpy()
+>> import sdroptim_client as sc
+>> sc.get_default_generatedpy()
 
 --------------------------------
 (results: generated.py)
 json_file_name = 'metadata.json'
-#-*- encoding: utf-8 -*-
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import sklearn.metrics as metrics
-##* objective functions for multiple algorithms
 def objective_gpu(trial):
     train_data, test_data, features, target = load_data()
     algorithm_name = trial.suggest_categorical("algorithm_name_gpu", ['XGBoost', 'LightGBM', 'DL_Pytorch'])
