@@ -358,6 +358,11 @@ def get_autofe_batch_script(gui_params, max_nproc_per_node = 30, json_file_name=
         if 'n_proc' in gui_params['autofe_system_attr']:
             n_proc = gui_params['autofe_system_attr']['n_proc'] # update n_proc if exists in metadata.json
     n_tasks = n_proc
+    if 'env_name' in gui_params['autofe_system_attr']:
+        env_name = gui_params['autofe_system_attr']['env_name']
+        env_script = "source activate "+env_name + "\n"
+    else:
+        env_script = ""    
     #############################
     if n_tasks < max_nproc_per_node:
         n_nodes = 1
@@ -417,6 +422,7 @@ def get_autofe_batch_script(gui_params, max_nproc_per_node = 30, json_file_name=
     #user_jobdir_mount = "-B /home/jclee/automl_jclee:/${JOBDIR}"                 # my custom
     singularity_image = "/EDISON/SCIDATA/singularity-images/userenv"
     ######################
+    ######################
     steps = ['autofe','mergecsv']
     running_command_list = []
     def get_pycode(stepname, json_file_name):
@@ -429,7 +435,12 @@ def get_autofe_batch_script(gui_params, max_nproc_per_node = 30, json_file_name=
         with open(jobpath+os.sep+job_title+'_'+steps[i]+'.py', 'w') as f:
             f.write(generated_code)
             os.chmod(jobpath+os.sep+job_title+'_'+steps[i]+'.py', 0o666) # add permission 201012
-            running_command_list.append("python ${JOBDIR}/"+job_title+"_"+steps[i]+'.py')
+        with open(jobpath+os.sep+job_title+'_'+steps[i]+'.sh', 'w') as f:
+            sh_scripts = jobdir+env_script +"cd ${JOBDIR}\npython ${JOBDIR}/"+job_title+"_generated"+".py\n"
+            f.write(sh_scripts)
+            os.chmod(jobpath+os.sep+job_title+'_'+steps[i]+'.sh', 0o777) # add permission 201012
+        #running_command_list.append("python ${JOBDIR}/"+job_title+"_"+steps[i]+'.py')
+        running_command_list.append("/bin/bash ${JOBDIR}/"+job_title+'_'+steps[i]+'.sh')
     #
     def get_multiple_mpi_commands(common_parts, running_command_list):
         mpirun_command, mpirun_options, singularity_command, user_home_mount_for_custom_enviromnent, user_jobdir_mount, singularity_image = common_parts[0], common_parts[1], common_parts[2], common_parts[3], common_parts[4], common_parts[5]
