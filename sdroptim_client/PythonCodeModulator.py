@@ -247,7 +247,8 @@ def get_user_id(debug=False):
     user_home1 = str(base64.b64decode(b'L0VESVNPTi9TQ0lEQVRBL3Nkci9kcmFmdC8='))[2:-1]
     user_home2 = str(base64.b64decode(b'L3NjaWVuY2UtZGF0YS9zZHIvZHJhZnQv'))[2:-1]
     user_home3 = "/home/"
-    user_homes = [user_home1, user_home2, user_home3]
+    user_home4 = os.getcwd()
+    user_homes = [user_home1, user_home2, user_home3, user_home4]
     cwd=os.getcwd()
     if debug:
         uname = cwd.split(os.sep)[-1]
@@ -272,11 +273,14 @@ def get_user_id(debug=False):
         raise ValueError(("The current user directory cannot be founded in the pre-defined userhome list. " if in_user_home_list else "")+
             "Failed to find user_id, please check the current user directory.")
 
-def get_jobpath_with_attr(gui_params=None, debug=False):
+def get_jobpath_with_attr(gui_params=None, job_type='hpo',debug=False): # 20210624 hpo only -> autofe + hpo support (hpo default)
     if not gui_params:
-        gui_params = {'hpo_system_attr':{}} # set default 
+        gui_params = {job_type+'_system_attr':{}} # set default 
+        debug = True
     cwd=os.getcwd()
     uname, each = get_user_id(debug=debug) # each == user home( under workspace )
+    if each[-1]!=os.sep:
+        each+=os.sep
     #########################################################################
     if debug:
         if not os.path.exists(cwd+os.sep+"workspace/"):
@@ -285,48 +289,183 @@ def get_jobpath_with_attr(gui_params=None, debug=False):
             os.mkdir(cwd+os.sep+"workspace/default_ws/")
         if not os.path.exists(cwd+os.sep+"workspace/default_ws/job/"):
             os.mkdir(cwd+os.sep+"workspace/default_ws/job/")
-        
-        if 'job_directory' in gui_params['hpo_system_attr']:
-            job_directory=gui_params['hpo_system_attr']['job_directory'] # directory name
+        ###1123124124124
+        if 'job_directory' in gui_params[job_type+'_system_attr']:
+            job_directory=gui_params[job_type+'_system_attr']['job_directory'] # directory name
             jobpath = cwd+os.sep+"workspace/default_ws/job/"+job_directory
         else: # if it is first try -> generate it
             timenow = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-            job_directory = "job-"+timenow
-            jobpath = cwd+os.sep+"workspace/default_ws/job/jupyterhpo-"+timenow
+            job_prefix = "automl" if job_type =='hpo' else job_type
+            job_directory = job_prefix+"-"+str(timenow)
+            jobpath = cwd+os.sep+"workspace/default_ws/job/"+job_directory
         if not os.path.exists(jobpath):
             os.mkdir(jobpath)
             os.chmod(jobpath, 0o776) # add permission 201012
             #
-        sname=gui_params['hpo_system_attr']['study_name'] if 'study_name' in gui_params['hpo_system_attr'] else str(uuid.uuid4())        
+        sname=gui_params[job_type+'_system_attr']['study_name'] if 'study_name' in gui_params[job_type+'_system_attr'] else str(uuid.uuid4())
         #job_title = sname+"_in_"+uname
         job_title = sname
         wsname = "default_ws"
         return jobpath, (uname, sname, job_title, wsname, job_directory)
     ########################################################################        
     # otherwise, use 'user_name' in the params
-    if 'user_name' in gui_params['hpo_system_attr']:
-        uname=gui_params['hpo_system_attr']['user_name'] 
-    sname=gui_params['hpo_system_attr']['study_name'] if 'study_name' in gui_params['hpo_system_attr'] else str(uuid.uuid4())
+    if 'user_name' in gui_params[job_type+'_system_attr']:
+        uname=gui_params[job_type+'_system_attr']['user_name'] 
+    sname=gui_params[job_type+'_system_attr']['study_name'] if 'study_name' in gui_params[job_type+'_system_attr'] else str(uuid.uuid4())
     #job_title=sname+"_in_"+uname
-    job_title = sname
+    job_title = sname if job_type=='hpo' else "deefault_job_title"
     ##########################
-    if 'workspace_name' in gui_params['hpo_system_attr']:
-        wsname=gui_params['hpo_system_attr']['workspace_name'] # directory name (MANDATORY)    
+    if 'workspace_name' in gui_params[job_type+'_system_attr']:
+        wsname=gui_params[job_type+'_system_attr']['workspace_name'] # directory name (MANDATORY)    
     else:
         wsname=cwd.split('/workspace/')[1].split('/')[0]
     ###########################
-    if 'job_directory' in gui_params['hpo_system_attr']:
-        job_directory=gui_params['hpo_system_attr']['job_directory'] # directory name
+    if 'job_directory' in gui_params[job_type+'_system_attr']:
+        job_directory=gui_params[job_type+'_system_attr']['job_directory'] # directory name
     else:
         timenow = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-        job_directory="jupyterhpo-"+timenow
+        job_prefix = "automl" if job_type =='hpo' else job_type
+        job_directory = job_prefix+"-"+str(timenow)
     if not os.path.exists(each+uname+'/workspace/'+str(wsname)+'/job/'):
         os.mkdir(each+uname+'/workspace/'+str(wsname)+'/job/')
     jobpath = each+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)
     if not os.path.exists(jobpath):
         os.mkdir(jobpath)
         os.chmod(jobpath, 0o776) # add permission 201012
+    #
+    if job_type == 'autofe':
+        if 'title' in gui_params['autofe_system_attr']:
+            title = gui_params['autofe_system_attr']['title']
+        else:
+            timenow = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+            title = "default_autofe_title_"+str(timenow)
+        job_title = title + "_" + job_directory
     return jobpath, (uname, sname, job_title, wsname, job_directory)
+
+def get_autofe_batch_script(gui_params, max_nproc_per_node = 30, json_file_name='metadata.json', debug=False, dejob_id=""):
+    jobpath, (uname, sname, job_title, wsname, job_directory) = get_jobpath_with_attr(gui_params=gui_params, job_type='autofe', debug=debug)
+    ###########################
+    time_deadline_sec = 3600 # default time_deadline_sec
+    if 'autofe_system_attr' in gui_params:
+        if 'time_deadline_sec' in gui_params['autofe_system_attr']:
+            time_deadline_sec = gui_params['autofe_system_attr']['time_deadline_sec'] # update time_deadline_sec if exists in metadata.json
+    group_no = 1 # default group_no
+    if 'autofe_system_attr' in gui_params:
+        if 'group_no' in gui_params['autofe_system_attr']:
+            group_no = gui_params['autofe_system_attr']['group_no'] # update group_no if exists in metadata.json
+    n_proc = 1 # default n_proc == same as n_tasks in slurm
+    if 'autofe_system_attr' in gui_params:
+        if 'n_proc' in gui_params['autofe_system_attr']:
+            n_proc = gui_params['autofe_system_attr']['n_proc'] # update n_proc if exists in metadata.json
+    n_tasks = n_proc
+    #############################
+    if n_tasks < max_nproc_per_node:
+        n_nodes = 1
+    else:
+        n_nodes = n_tasks // max_nproc_per_node
+    #############################
+    prefix ='#!/bin/bash\n'
+    prefix+='#SBATCH --job-name='+ job_title +'\n'
+    prefix+='#SBATCH --output=/EDISON/SCIDATA/sdr/draft/'+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/std.out\n'
+    prefix+='#SBATCH --error=/EDISON/SCIDATA/sdr/draft/'+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/std.err\n'
+    prefix+='#SBATCH --nodes='+str(n_nodes)+'\n'
+    prefix+='#SBATCH --ntasks='+str(n_tasks)+'\n'
+    #prefix+='#SBATCH --ntasks-per-node='+str(int(n_tasks/n_nodes))+'\n'
+    #prefix+='#SBATCH --gres=gpu:'+str(n_gpu)+'\n'
+    #
+    timed=datetime.timedelta(seconds=time_deadline_sec)
+    n_days = timed.days
+    rest_seconds = timed.seconds#+ 360 # add marginal seconds (5min)
+    timed_without_days=datetime.timedelta(seconds=rest_seconds)
+    rval=str(n_days)+"-"+str(timed_without_days)
+    #
+    prefix+='#SBATCH --time='+ rval +'\n' # e.g., 34:10:33
+    #prefix+='#SBATCH --exclusive\n'
+    paths = 'HOME=/EDISON/SCIDATA/sdr/draft/'+uname+'\n'
+    jobdir= 'JOBDIR=/home/'+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'\n' # path in singularity image (after mounting)
+    paths += jobdir
+    #
+    #####################################################################################
+    ### JOB init @ portal // modified 0812 --> deprecated @ 0.1.1 -> used in register function
+    #job_init ="\n## JOB init @ portal\n"
+    #job_init+="deJobId=$(curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-submit-de-job "
+    #job_init+="-d screenName="+uname+" "
+    #job_init+="-d title="+job_title+" "
+    #job_init+="-d targetType=82 " # 82 = HPO job
+    #job_init+="-d workspaceName="+wsname+" "
+    #job_init+="-d location="+jobpath+")\n\n"
+    if not dejob_id:
+        if 'dejob_id' in gui_params['autofe_system_attr']:
+            dejob_id = gui_params['autofe_system_attr']['dejob_id']
+        else:
+            raise valueError("Modulator cannot get the dejob_id from metadata.json")
+    ### JOB RUNNING
+    job_running ="\n## Update the job status as 'RUNNING' @ portal_db\n"
+    job_running+="curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status "
+    job_running+="-d deJobId="+str(dejob_id)
+    job_running+=" -d Status=RUNNING\n\n"
+    ##### mpirun command
+    mpirun_command = "## mpirun command\n"
+    mpirun_command+= "/usr/local/bin/mpirun -np " + str(n_tasks)
+    mpirun_options = "-x TORCH_HOME=/home/"+uname+" "
+    mpirun_options+= "-x PATH -x HOROVOD_MPI_THREADS_DISABLE=1 -x NCCL_SOCKET_IFNAME=^docker0,lo -mca btl_tcp_if_exclude lo,docker0  -mca pml ob1"
+    ##### singularity command
+    singularity_command = "singularity exec --nv"
+    user_home_mount_for_custom_enviromnent = "-H ${HOME}:"+"/home/"+uname        # final
+    #user_home_mount_for_custom_enviromnent = "-H /home/"+uname+":"+"/home/"+uname  # my custom
+    user_jobdir_mount = ""#"-B ${JOBDIR}:${JOBDIR}"                               # final
+    #user_jobdir_mount = "-B /home/jclee/automl_jclee:/${JOBDIR}"                 # my custom
+    singularity_image = "/EDISON/SCIDATA/singularity-images/userenv"
+    ######################
+    steps = ['autofe','mergecsv']
+    running_command_list = []
+    def get_pycode(stepname, json_file_name):
+        base = 'if __name__ == "__main__":\n'
+        base+= '    import sdroptim\n'
+        others = "    sdroptim."+stepname+"_mpi(metadata_filename = '"+json_file_name+"')\n"
+        return base+others
+    for i in range(len(steps)):
+        generated_code = get_pycode(steps[i],json_file_name)
+        with open(jobpath+os.sep+job_title+'_'+steps[i]+'.py', 'w') as f:
+            f.write(generated_code)
+            os.chmod(jobpath+os.sep+job_title+'_'+steps[i]+'.py', 0o666) # add permission 201012
+            running_command_list.append("python ${JOBDIR}/"+job_title+"_"+steps[i]+'.py')
+    #
+    def get_multiple_mpi_commands(common_parts, running_command_list):
+        mpirun_command, mpirun_options, singularity_command, user_home_mount_for_custom_enviromnent, user_jobdir_mount, singularity_image = common_parts[0], common_parts[1], common_parts[2], common_parts[3], common_parts[4], common_parts[5]
+        res=""
+        error_code_names = []
+        for each_command in running_command_list:
+            error_code_name = "error_code_"+each_command.split('.py')[0].split('_')[-1]
+            res+= mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" "+ each_command \
+                   + " || "+error_code_name+"=$?\n"
+            error_code_names.append(error_code_name)
+        return res, error_code_names
+    def get_jobdone_by_multiple_errorcode(error_code_names):
+        ## JOB done @ portal
+        job_done = "\n## JOB done @ portal\n"
+        i = 0
+        for error_code in error_code_names:
+            job_done += "el" if i!=0 else ""
+            job_done += 'if [ ! "${'+error_code+'}" = "" ]; then\n'
+            job_done += '    echo ${'+error_code+'}\n'
+            job_done += '    echo "failed" > ${JOBDIR}/status\n'
+            job_done += '    curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status -d deJobId='+str(dejob_id)+' -d Status=FAILED\n'
+            i+=1
+        job_done += 'else\n'
+        job_done += '    echo ${error_code}\n'
+        job_done += '    echo "finished" > ${JOBDIR}/status\n'
+        job_done += '    curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status -d deJobId='+str(dejob_id)+' -d Status=SUCCESS\n'
+        job_done += 'fi\n'
+        return job_done
+    ##############
+    # finalize
+    top = prefix+paths+job_running
+    middle, error_code_names = get_multiple_mpi_commands((mpirun_command, mpirun_options, singularity_command, user_home_mount_for_custom_enviromnent, user_jobdir_mount, singularity_image), running_command_list)
+    bottom = get_jobdone_by_multiple_errorcode(error_code_names)
+    results = top+middle+bottom
+    return results 
+
 
 def get_batch_script(gui_params, debug=False, dejob_id=""):
     jobpath, (uname, sname, job_title, wsname, job_directory) = get_jobpath_with_attr(gui_params=gui_params, debug=debug)
