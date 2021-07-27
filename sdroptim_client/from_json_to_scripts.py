@@ -2,6 +2,7 @@
 import json, os
 import sdroptim_client.RCodeGenerator as RGen
 import sdroptim_client.PythonCodeModulator as PyMod
+from multiprocessing import cpu_count
 
 def FullscriptsGenerator(json_file_name):
     # GUI parameters loading part
@@ -20,7 +21,7 @@ def FullscriptsGenerator(json_file_name):
     # 20210624 add autofe
     if 'autofe_system_attr' in gui_params:
         jobpath, (uname, sname, job_title, wsname, job_directory) = PyMod.get_jobpath_with_attr(gui_params, 'autofe')
-        jobscripts = PyMod.get_autofe_batch_script(gui_params=gui_params, max_nproc_per_node=30, json_file_name=json_file_name)
+        jobscripts = PyMod.get_autofe_batch_script(gui_params=gui_params, max_nproc_per_node=int(cpu_count/2), json_file_name=json_file_name)
         # python codes are generated in the get_autofe_batch_script()
         with open(jobpath+os.sep+'job.sh', 'w') as f:
             f.write(jobscripts)

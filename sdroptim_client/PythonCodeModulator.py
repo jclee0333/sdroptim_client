@@ -342,7 +342,7 @@ def get_jobpath_with_attr(gui_params=None, job_type='hpo',debug=False): # 202106
         job_title = title + "_" + job_directory
     return jobpath, (uname, sname, job_title, wsname, job_directory)
 
-def get_autofe_batch_script(gui_params, max_nproc_per_node = 30, json_file_name='metadata.json', debug=False, dejob_id=""):
+def get_autofe_batch_script(gui_params, max_nproc_per_node, json_file_name='metadata.json', debug=False, dejob_id=""):
     jobpath, (uname, sname, job_title, wsname, job_directory) = get_jobpath_with_attr(gui_params=gui_params, job_type='autofe', debug=debug)
     ###########################
     time_deadline_sec = 3600 # default time_deadline_sec
@@ -423,7 +423,7 @@ def get_autofe_batch_script(gui_params, max_nproc_per_node = 30, json_file_name=
     singularity_image = "/EDISON/SCIDATA/singularity-images/userenv"
     ######################
     ######################
-    steps = ['autofe','mergecsv']
+    steps = ['autofe','mergecsv','featureselection']
     running_command_list = []
     def get_pycode(stepname, json_file_name):
         base = 'if __name__ == "__main__":\n'
