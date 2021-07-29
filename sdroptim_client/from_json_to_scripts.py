@@ -13,6 +13,7 @@ from multiprocessing import cpu_count
 
 def FullscriptsGenerator(json_file_name, for_java_portal=False):
     # GUI parameters loading part
+    '''for_java_portal is reserved for future plan (2021-07-29)'''
     json_file_path = "./"
     json_file_number = ""
     with open(json_file_name) as data_file:
@@ -27,6 +28,7 @@ def FullscriptsGenerator(json_file_name, for_java_portal=False):
     #############################
     # 20210624 add autofe
     debug = False
+    dejob_id = ""
     if 'autofe_system_attr' in gui_params:
         try:
             jobpath, (uname, sname, job_title, wsname, job_directory) = PyMod.get_jobpath_with_attr(gui_params, 'autofe', debug=debug)
@@ -34,7 +36,14 @@ def FullscriptsGenerator(json_file_name, for_java_portal=False):
             debug=True
             print("** Generating codes via debug mode for local testing. Please run this program on the portal system.")
             jobpath, (uname, sname, job_title, wsname, job_directory) = PyMod.get_jobpath_with_attr(gui_params, 'autofe', debug=debug)
-        jobscripts = PyMod.get_autofe_batch_script(gui_params=gui_params, max_nproc_per_node=int(cpu_count()/2), json_file_name=json_file_name, debug=debug)
+        ####### get dejob_id if file exists
+        try:
+            with open(jobpath+os.sep+'job.id','r') as d_id:
+                dejob_id=int(d_id.readlines()[0].split('\n')[0])
+        except:
+            dejob_id = ""
+        #######
+        jobscripts = PyMod.get_autofe_batch_script(gui_params=gui_params, max_nproc_per_node=int(cpu_count()/2), json_file_name=json_file_name, debug=debug, dejob_id = dejob_id)
         # python codes are generated in the get_autofe_batch_script()
         with open(jobpath+os.sep+'job.sh', 'w') as f:
             f.write(jobscripts)
@@ -49,6 +58,13 @@ def FullscriptsGenerator(json_file_name, for_java_portal=False):
             debug=True
             print("** Generating codes via debug mode for local testing. Please run this program on the portal system.")
             jobpath, (uname, sname, job_title, wsname, job_directory) = PyMod.get_jobpath_with_attr(gui_params, 'hpo', debug=debug)
+        ####### get dejob_id if file exists
+        try:
+            with open(jobpath+os.sep+'job.id','r') as d_id:
+                dejob_id=int(d_id.readlines()[0].split('\n')[0])
+        except:
+            dejob_id = ""
+        #######
         generated_code = PyMod.from_gui_to_code(gui_params)        
         with open(jobpath+os.sep+job_title+'_generated.py', 'w') as f:
             f.write(prefix_generated_code+generated_code)
@@ -57,7 +73,7 @@ def FullscriptsGenerator(json_file_name, for_java_portal=False):
         #############################
         ## make job script(sbatch)
         #############################
-        jobscripts = PyMod.get_batch_script(gui_params, debug=debug)
+        jobscripts = PyMod.get_batch_script(gui_params, debug=debug, dejob_id=dejob_id)
         with open(jobpath+os.sep+'job.sh', 'w') as f:
             f.write(jobscripts)
             os.chmod(jobpath+os.sep+'job.sh', 0o777) # add permission 201012
