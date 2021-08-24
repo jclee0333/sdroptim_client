@@ -406,11 +406,11 @@ def get_autofe_batch_script(gui_params, max_nproc_per_node, json_file_name='meta
             raise valueError("Modulator cannot get the dejob_id from metadata.json")
     ### JOB RUNNING
     job_running ="\n## Update the job status as 'RUNNING' @ portal_db\n"
-
-    if liferay_v ==6: # sdr.edison.re.kr (242) # 2020
+    register_dejob_prefix=""
+    if liferay_v == 6: # sdr.edison.re.kr (242) # 2020
         register_dejob_prefix = "curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status "
     elif liferay_v == 7: # sdr7.edison.re.kr (247) # 2021
-        register_dejob_prefix+="curl -k https://sdr7.edison.re.kr:8443/api/jsonws/sdr.dejob/studio-update-status "
+        register_dejob_prefix ="curl -k https://sdr7.edison.re.kr:8443/api/jsonws/sdr.dejob/studio-update-status "
     job_running+=register_dejob_prefix
     job_running+="-d deJobId="+str(dejob_id)
     job_running+=" -d Status=RUNNING\n\n"
