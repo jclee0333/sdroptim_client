@@ -447,9 +447,10 @@ def get_autofe_batch_script(gui_params, max_nproc_per_node, json_file_name='meta
         res=""
         error_code_names = []
         for each_command in running_command_list:
-            error_code_name = "error_code_"+each_command.split('.py')[0].split('_')[-1]
+            #error_code_name = "error_code_"+each_command.split('.py')[0].split('_')[-1]
+            error_code_name = "error_code_"+each_command.split('.py')[0].split('_')[-1].split('.sh')[0]
             res+= mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" "+ each_command \
-                   + " || "+error_code_name+"=$?\n"
+                   + " || error_code=$? ; "+ error_code_name+"=${error_code}\n"
             error_code_names.append(error_code_name)
         return res, error_code_names
     def get_jobdone_by_multiple_errorcode(error_code_names):
@@ -464,7 +465,7 @@ def get_autofe_batch_script(gui_params, max_nproc_per_node, json_file_name='meta
             job_done += '    curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status -d deJobId='+str(dejob_id)+' -d Status=FAILED\n'
             i+=1
         job_done += 'else\n'
-        job_done += '    echo ${error_code}\n'
+        #job_done += '    echo ${error_code}\n'
         job_done += '    echo "finished" > ${JOBDIR}/status\n'
         job_done += '    curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status -d deJobId='+str(dejob_id)+' -d Status=SUCCESS\n'
         job_done += 'fi\n'
