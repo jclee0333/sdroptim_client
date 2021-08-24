@@ -484,7 +484,7 @@ def get_autofe_batch_script(gui_params, max_nproc_per_node, json_file_name='meta
     return results 
 
 
-def get_batch_script(gui_params, debug=False, dejob_id=""):
+def get_batch_script(gui_params, debug=False, dejob_id="", liferay_v=7):
     jobpath, (uname, sname, job_title, wsname, job_directory) = get_jobpath_with_attr(gui_params=gui_params, debug=debug)
     ###########################
     time_deadline_sec = gui_params['hpo_system_attr']['time_deadline_sec']
@@ -579,7 +579,12 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
             raise valueError("Modulator cannot get the dejob_id from metadata.json")
     ### JOB RUNNING
     job_running ="\n## Update the job status as 'RUNNING' @ portal_db\n"
-    job_running+="curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status "
+    register_dejob_prefix=""
+    if liferay_v == 6: # sdr.edison.re.kr (242) # 2020
+        register_dejob_prefix = "curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status "
+    elif liferay_v == 7: # sdr7.edison.re.kr (247) # 2021
+        register_dejob_prefix ="curl -k https://sdr7.edison.re.kr:8443/api/jsonws/sdr.dejob/studio-update-status "
+    job_running+=register_dejob_prefix
     job_running+="-d deJobId="+str(dejob_id)
     job_running+=" -d Status=RUNNING\n"
     ##### mpirun command
@@ -602,12 +607,12 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     job_done = "## JOB done @ portal\n"
     job_done += 'if [ ! "${error_code}" = "" ]; then\n'
     job_done += '    echo ${error_code}\n'
-    job_done += '    echo "failed" > ${JOBDIR}/status\n'
-    job_done += '    curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status -d deJobId='+str(dejob_id)+' -d Status=FAILED\n'
+    job_done += '    echo "FAILED" > ${HOME}/'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
+    job_done += '    '+register_dejob_prefix+'-d deJobId='+str(dejob_id)+' -d Status=FAILED\n'
     job_done += 'else\n'
     job_done += '    echo ${error_code}\n'
-    job_done += '    echo "finished" > ${JOBDIR}/status\n'
-    job_done += '    curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status -d deJobId='+str(dejob_id)+' -d Status=SUCCESS\n'
+    job_done += '    echo "FAILED" > ${HOME}/'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
+    job_done += '    '+register_dejob_prefix+'-d deJobId='+str(dejob_id)+' -d Status=SUCCESS\n'
     job_done += 'fi\n'
     ##############
     # deprecated 1130
