@@ -436,7 +436,7 @@ def get_autofe_batch_script(gui_params, max_nproc_per_node, json_file_name='meta
             f.write(generated_code)
             os.chmod(jobpath+os.sep+job_title+'_'+steps[i]+'.py', 0o666) # add permission 201012
         with open(jobpath+os.sep+job_title+'_'+steps[i]+'.sh', 'w') as f:
-            sh_scripts = jobdir+env_script +"cd ${JOBDIR}\n"+"python ${JOBDIR}/"+job_title+"_"+steps[i]+'.py\n'
+            sh_scripts = jobdir+env_script +"cd ${JOBDIR}\n"+"python -m mpi4py ${JOBDIR}/"+job_title+"_"+steps[i]+'.py\n' # to avoid deadlock issue: https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
             f.write(sh_scripts)
             os.chmod(jobpath+os.sep+job_title+'_'+steps[i]+'.sh', 0o777) # add permission 201012
         #running_command_list.append("python ${JOBDIR}/"+job_title+"_"+steps[i]+'.py')
@@ -541,7 +541,7 @@ def get_batch_script(gui_params, debug=False, dejob_id=""):
     else:
         env_script = ""
     with open(jobpath+os.sep+job_title+"_run_in_singularity_image.sh", 'w') as f:
-        sh_scripts = jobdir+env_script +"cd ${JOBDIR}\npython ${JOBDIR}/"+job_title+"_generated"+".py\n"
+        sh_scripts = jobdir+env_script +"cd ${JOBDIR}\npython -m mpi4py ${JOBDIR}/"+job_title+"_generated"+".py\n" # to avoid deadlock issue: https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
         f.write(sh_scripts)
         os.chmod(jobpath+os.sep+job_title+"_run_in_singularity_image.sh", 0o777) # add permission 201012
     with open(jobpath+os.sep+"get_chart.sh",'w') as f2:
