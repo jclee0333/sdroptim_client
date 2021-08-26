@@ -466,12 +466,12 @@ def get_autofe_batch_script(gui_params, max_nproc_per_node, json_file_name='meta
             job_done += "el" if i!=0 else ""
             job_done += 'if [ ! "${'+error_code+'}" = "" ]; then\n'
             job_done += '    echo ${'+error_code+'}\n'
-            job_done += '    echo "FAILED" > ${HOME}/'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
+            job_done += '    echo "FAILED" > ${HOME}'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
             job_done += '    '+register_dejob_prefix+'-d deJobId='+str(dejob_id)+' -d Status=FAILED\n'
             i+=1
         job_done += 'else\n'
         #job_done += '    echo ${error_code}\n'
-        job_done += '    echo "FINISHED" > ${HOME}/'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
+        job_done += '    echo "FINISHED" > ${HOME}'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
         job_done += '    '+register_dejob_prefix+'-d deJobId='+str(dejob_id)+' -d Status=SUCCESS\n'
         job_done += 'fi\n'
         return job_done
@@ -607,11 +607,11 @@ def get_batch_script(gui_params, debug=False, dejob_id="", liferay_v=7):
     job_done = "## JOB done @ portal\n"
     job_done += 'if [ ! "${error_code}" = "" ]; then\n'
     job_done += '    echo ${error_code}\n'
-    job_done += '    echo "FAILED" > ${HOME}/'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
+    job_done += '    echo "FAILED" > ${HOME}'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
     job_done += '    '+register_dejob_prefix+'-d deJobId='+str(dejob_id)+' -d Status=FAILED\n'
     job_done += 'else\n'
     job_done += '    echo ${error_code}\n'
-    job_done += '    echo "FAILED" > ${HOME}/'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
+    job_done += '    echo "FAILED" > ${HOME}'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
     job_done += '    '+register_dejob_prefix+'-d deJobId='+str(dejob_id)+' -d Status=SUCCESS\n'
     job_done += 'fi\n'
     ##############
