@@ -43,7 +43,9 @@ def FullscriptsGenerator(json_file_name, for_java_portal=False):
         except:
             dejob_id = ""
         #######
-        jobscripts = PyMod.get_autofe_batch_script(gui_params=gui_params, max_nproc_per_node=int(cpu_count()/2), json_file_name=json_file_name, debug=debug, dejob_id = dejob_id)
+        #jobscripts = PyMod.get_autofe_batch_script(gui_params=gui_params, max_nproc_per_node=int(cpu_count()/2), json_file_name=json_file_name, debug=debug, dejob_id = dejob_id)
+        jobscripts = PyMod.get_autofe_batch_script(gui_params=gui_params, max_nproc_per_node=30, json_file_name=json_file_name, debug=debug, dejob_id = dejob_id)
+        # due to the lack of processor in slurm worker nodes
         # python codes are generated in the get_autofe_batch_script()
         with open(jobpath+os.sep+'job.sh', 'w') as f:
             f.write(jobscripts)
