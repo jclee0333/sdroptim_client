@@ -344,6 +344,298 @@ def get_jobpath_with_attr(gui_params=None, job_type='hpo',debug=False): # 202106
 
 def get_autofe_batch_script(gui_params, max_nproc_per_node, json_file_name='metadata.json', debug=False, dejob_id="", liferay_v=7):
     jobpath, (uname, sname, job_title, wsname, job_directory) = get_jobpath_with_attr(gui_params=gui_params, job_type='autofe', debug=debug)
+    json_file_name='metadata.json'
+    debug = False
+    dejob_id = ""
+    jobpath='/home/enoz/workspace/Park_Test/job/autofe-20210826162718'
+    uname='enoz'
+    wsname='Park_Test'
+    job_directory='autofe-20210826162718'
+    ###########################
+    time_deadline_sec = 3600 # default time_deadline_sec
+    if 'autofe_system_attr' in gui_params:
+        if 'time_deadline_sec' in gui_params['autofe_system_attr']:
+            time_deadline_sec = gui_params['autofe_system_attr']['time_deadline_sec'] # update time_deadline_sec if exists in metadata.json
+    group_no = 1 # default group_no
+    if 'autofe_system_attr' in gui_params:
+        if 'group_no' in gui_params['autofe_system_attr']:
+            group_no = gui_params['autofe_system_attr']['group_no'] # update group_no if exists in metadata.json
+    n_proc = 1 # default n_proc == same as n_tasks in slurm
+    if 'autofe_system_attr' in gui_params:
+        if 'n_proc' in gui_params['autofe_system_attr']:
+            n_proc = gui_params['autofe_system_attr']['n_proc'] # update n_proc if exists in metadata.json
+    n_tasks = n_proc
+    if 'env_name' in gui_params['autofe_system_attr']:
+        env_name = gui_params['autofe_system_attr']['env_name']
+        env_script = "source activate "+env_name + "\n"
+    else:
+        env_script = ""    
+    #############################
+    if n_tasks < max_nproc_per_node:
+        n_nodes = 1
+    else:
+        n_nodes = n_tasks // max_nproc_per_node
+    #############################
+    prefix ='#!/bin/bash\n'
+    prefix+='#SBATCH --job-name='+ job_title +'\n'
+    prefix+='#SBATCH --output=/EDISON/SCIDATA/sdr/draft/'+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/std.out\n'
+    prefix+='#SBATCH --error=/EDISON/SCIDATA/sdr/draft/'+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/std.err\n'
+    prefix+='#SBATCH --nodes='+str(n_nodes)+'\n'
+    prefix+='#SBATCH --ntasks='+str(n_tasks)+'\n'
+    #prefix+='#SBATCH --ntasks-per-node='+str(int(n_tasks/n_nodes))+'\n'
+    #prefix+='#SBATCH --gres=gpu:'+str(n_gpu)+'\n'
+    #
+    timed=datetime.timedelta(seconds=time_deadline_sec)
+    n_days = timed.days
+    rest_seconds = timed.seconds#+ 360 # add marginal seconds (5min)
+    timed_without_days=datetime.timedelta(seconds=rest_seconds)
+    rval=str(n_days)+"-"+str(timed_without_days)
+    #
+    prefix+='#SBATCH --time='+ rval +'\n' # e.g., 34:10:33
+    #prefix+='#SBATCH --exclusive\n'
+    paths = 'HOME=/EDISON/SCIDATA/sdr/draft/'+uname+'\n'
+    jobdir= 'JOBDIR=/home/'+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'\n' # path in singularity image (after mounting)
+    paths += jobdir
+    #
+    #####################################################################################
+    ### JOB init @ portal // modified 0812 --> deprecated @ 0.1.1 -> used in register function
+    if not dejob_id:
+        if 'dejob_id' in gui_params['autofe_system_attr']:
+            dejob_id = gui_params['autofe_system_attr']['dejob_id']
+        else:
+            raise valueError("Modulator cannot get the dejob_id from metadata.json")
+    ### JOB RUNNING
+    job_running ="\n## Update the job status as 'RUNNING' @ portal_db\n"
+    register_dejob_prefix=""
+    if liferay_v == 6: # sdr.edison.re.kr (242) # 2020
+        register_dejob_prefix = "curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status "
+    elif liferay_v == 7: # sdr7.edison.re.kr (247) # 2021
+        register_dejob_prefix ="curl -k https://sdr7.edison.re.kr:8443/api/jsonws/sdr.dejob/studio-update-status "
+    job_running+=register_dejob_prefix
+    job_running+="-d deJobId="+str(dejob_id)
+    job_running+=" -d Status=RUNNING\n\n"
+    ##### mpirun command
+    mpirun_command = "/usr/local/bin/mpirun -np " + str(n_tasks)
+    mpirun_options = "-x TORCH_HOME=/home/"+uname+" "
+    mpirun_options+= "-x PATH -x HOROVOD_MPI_THREADS_DISABLE=1 -x NCCL_SOCKET_IFNAME=^docker0,lo -mca btl_tcp_if_exclude lo,docker0  -mca pml ob1"
+    ##### singularity command
+    singularity_command = "singularity exec --nv"
+    user_home_mount_for_custom_enviromnent = "-H ${HOME}:"+"/home/"+uname        # final
+    #user_home_mount_for_custom_enviromnent = "-H /home/"+uname+":"+"/home/"+uname  # my custom
+    user_jobdir_mount = ""#"-B ${JOBDIR}:${JOBDIR}"                               # final
+    #user_jobdir_mount = "-B /home/jclee/automl_jclee:/${JOBDIR}"                 # my custom
+    singularity_image = "/EDISON/SCIDATA/singularity-images/userenv"
+    ######################
+    steps = ['autofe','mergecsv','featureselection']
+    running_command_list = []
+    def get_pycode(stepname, json_file_name):
+        base = 'if __name__ == "__main__":\n'
+        base+= '    import sdroptim\n'
+        others = "    sdroptim."+stepname+"_mpi(metadata_filename = '"+json_file_name+"')\n"
+        return base+others
+    for i in range(len(steps)):
+        generated_code = get_pycode(steps[i],json_file_name)
+        with open(jobpath+os.sep+job_title+'_'+steps[i]+'.py', 'w') as f:
+            f.write(generated_code)
+            os.chmod(jobpath+os.sep+job_title+'_'+steps[i]+'.py', 0o666) # add permission 201012
+        with open(jobpath+os.sep+job_title+'_'+steps[i]+'.sh', 'w') as f:
+            sh_scripts = jobdir+env_script +"cd ${JOBDIR}\n"+"python -m mpi4py ${JOBDIR}/"+job_title+"_"+steps[i]+'.py\n' # to avoid deadlock issue: https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
+            f.write(sh_scripts)
+            os.chmod(jobpath+os.sep+job_title+'_'+steps[i]+'.sh', 0o777) # add permission 201012
+        #running_command_list.append("python ${JOBDIR}/"+job_title+"_"+steps[i]+'.py')
+        running_command_list.append("/bin/bash ${JOBDIR}/"+job_title+'_'+steps[i]+'.sh')
+    def get_multiple_mpi_commands(common_parts, running_command_list):
+        mpirun_command, mpirun_options, singularity_command, user_home_mount_for_custom_enviromnent, user_jobdir_mount, singularity_image = common_parts[0], common_parts[1], common_parts[2], common_parts[3], common_parts[4], common_parts[5]
+        res="## mpirun command\n"
+        job_done=""
+        res_temp = ""
+        i=0
+        for each_command in running_command_list:
+            error_code = "error_code_"+each_command.split('.py')[0].split('_')[-1].split('.sh')[0]
+            res_temp = mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" "+ each_command \
+                   + " || error_code=$? ; "+ error_code+"=${error_code}\n"
+            res_temp += 'if [ ! "${'+error_code+'}" = "" ]; then\n'
+            res_temp += '    echo ${'+error_code+'}\n'
+            res_temp += '    echo "FAILED" > ${HOME}'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
+            res_temp += '    '+register_dejob_prefix+'-d deJobId='+str(dejob_id)+' -d Status=FAILED\n'
+            res_temp += 'else'
+            res+=getIndent(res_temp, indent_level=i*4)
+            i=i+1
+        job_done += 'echo "FINISHED" > ${HOME}'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
+        job_done += register_dejob_prefix+'-d deJobId='+str(dejob_id)+' -d Status=SUCCESS'
+        res+=getIndent(job_done, indent_level=i*4)
+        for j in range(i-1,-1,-1):
+            res+=getIndent("fi", indent_level=j*4)
+        return res
+    # finalize
+    top = prefix+paths+job_running
+    bottom = get_multiple_mpi_commands((mpirun_command, mpirun_options, singularity_command, user_home_mount_for_custom_enviromnent, user_jobdir_mount, singularity_image), running_command_list)
+    return top+bottom
+
+def get_batch_script(gui_params, debug=False, dejob_id="", liferay_v=7):
+    jobpath, (uname, sname, job_title, wsname, job_directory) = get_jobpath_with_attr(gui_params=gui_params, debug=debug)
+    ###########################
+    time_deadline_sec = gui_params['hpo_system_attr']['time_deadline_sec']
+    cpuhas=[]
+    gpuhas=[]
+    if 'algorithm' in gui_params:
+        cpuhas = getAlgorithmListAccordingToResourceType(gui_params['algorithm'], 'cpu')
+        gpuhas = getAlgorithmListAccordingToResourceType(gui_params['algorithm'], 'gpu')
+    if 'n_nodes' not in gui_params['hpo_system_attr']:
+        raise ValueError("A custom job should clarify the 'n_nodes' in the argument params={ 'hpo_system_attr':{'n_nodes': (int) } } ")        
+    cpu_task = 1
+    gpu_task = 1
+    n_cpu = 0
+    n_gpu = 0
+    if len(cpuhas)>0:
+        cpu_task = 2
+        n_cpu += 30
+    if len(gpuhas)>0:
+        gpu_task = 2
+        n_gpu += 2
+    n_nodes = gui_params['hpo_system_attr']['n_nodes']
+    ### 20201124 update n_cpu & n_gpu (and n_nodes)
+    gui_params['hpo_system_attr'].update({"n_cpu":n_cpu})
+    gui_params['hpo_system_attr'].update({"n_gpu":n_gpu})
+    jsonfile = json.dumps(gui_params)
+    with open(jobpath+os.sep+'metadata.json', 'w') as f:
+        f.write(jsonfile)
+    n_tasks = n_nodes*cpu_task*gpu_task # n_tasks calculation for GUI-hpo
+    if 'n_tasks' in gui_params['hpo_system_attr']: # n_tasks for jupyter-hpo
+        n_tasks = gui_params['hpo_system_attr']['n_tasks']
+    #
+    prefix ='#!/bin/bash\n'
+    prefix+='#SBATCH --job-name='+ job_title +'\n'
+    prefix+='#SBATCH --output=/EDISON/SCIDATA/sdr/draft/'+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/std.out\n'
+    prefix+='#SBATCH --error=/EDISON/SCIDATA/sdr/draft/'+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/std.err\n'
+    prefix+='#SBATCH --nodes='+str(n_nodes)+'\n'
+    prefix+='#SBATCH --ntasks='+str(n_tasks)+'\n'
+    prefix+='#SBATCH --ntasks-per-node='+str(int(n_tasks/n_nodes))+'\n'
+    #prefix+='#SBATCH --gres=gpu:'+str(n_gpu)+'\n'
+    #
+    timed=datetime.timedelta(seconds=time_deadline_sec)
+    n_days = timed.days
+    rest_seconds = timed.seconds+ 360 # add marginal seconds (5min)
+    timed_without_days=datetime.timedelta(seconds=rest_seconds)
+    rval=str(n_days)+"-"+str(timed_without_days)
+    #
+    prefix+='#SBATCH --time='+ rval +'\n' # e.g., 34:10:33
+    prefix+='#SBATCH --exclusive\n'
+    paths = 'HOME=/EDISON/SCIDATA/sdr/draft/'+uname+'\n'
+    jobdir= 'JOBDIR=/home/'+uname+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'\n' # path in singularity image (after mounting)
+    paths += jobdir
+    #
+    #types = "scripts" if 'env_name' in gui_params['hpo_system_attr'] else "python"
+    #
+    #if types=="scripts":################################################################
+    if 'env_name' in gui_params['hpo_system_attr']:
+        #env_name = gui_params['hpo_system_attr']['env_name']
+        #env_script = "source activate "+env_name + "\n"
+        env_script = "" ### temporary disabled by jclee @ 2020. 11. 06 
+    else:
+        env_script = ""
+    with open(jobpath+os.sep+job_title+"_run_in_singularity_image.sh", 'w') as f:
+        sh_scripts = jobdir+env_script +"cd ${JOBDIR}\npython -m mpi4py ${JOBDIR}/"+job_title+"_generated"+".py\n" # to avoid deadlock issue: https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
+        f.write(sh_scripts)
+        os.chmod(jobpath+os.sep+job_title+"_run_in_singularity_image.sh", 0o777) # add permission 201012
+    with open(jobpath+os.sep+"get_chart.sh",'w') as f2:
+        something = '''from sdroptim_client import visualization as v;'''
+        #chart_directory = "/science-data/sdr/draft/"+str(uname)+"/workspace/"+str(wsname)+"/job/"+str(job_directory)
+        chart_directory = jobpath
+        something+= '''success=v.get_all_chart_html(json_file_name="'''+ \
+                        chart_directory+os.sep+'''metadata.json", output_dir="''' + \
+                        chart_directory+os.sep+'''");'''
+        #something+= '''if success:    with open("'''+jobpath+os.sep+'''complete.log", "w") as f:;        f.write("complete")'''
+        #
+        get_chart_script= "python3 -c '"+something+"'\n"
+        #
+        f2.write(get_chart_script)
+        os.chmod(jobpath+os.sep+"get_chart.sh", 0o777) # add permission 201012
+    #####################################################################################
+    ### JOB init @ portal // modified 0812 --> deprecated @ 0.1.1 -> used in register function
+    #job_init ="\n## JOB init @ portal\n"
+    #job_init+="deJobId=$(curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-submit-de-job "
+    #job_init+="-d screenName="+uname+" "
+    #job_init+="-d title="+job_title+" "
+    #job_init+="-d targetType=82 " # 82 = HPO job
+    #job_init+="-d workspaceName="+wsname+" "
+    #job_init+="-d location="+jobpath+")\n\n"
+    if not dejob_id:
+        if 'dejob_id' in gui_params['hpo_system_attr']:
+            dejob_id = gui_params['hpo_system_attr']['dejob_id']
+        else:
+            raise valueError("Modulator cannot get the dejob_id from metadata.json")
+    ### JOB RUNNING
+    job_running ="\n## Update the job status as 'RUNNING' @ portal_db\n"
+    register_dejob_prefix=""
+    if liferay_v == 6: # sdr.edison.re.kr (242) # 2020
+        register_dejob_prefix = "curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status "
+    elif liferay_v == 7: # sdr7.edison.re.kr (247) # 2021
+        register_dejob_prefix ="curl -k https://sdr7.edison.re.kr:8443/api/jsonws/sdr.dejob/studio-update-status "
+    job_running+=register_dejob_prefix
+    job_running+="-d deJobId="+str(dejob_id)
+    job_running+=" -d Status=RUNNING\n"
+    ##### mpirun command
+    mpirun_command = "## mpirun command\n"
+    mpirun_command+= "/usr/local/bin/mpirun -np " + str(n_tasks)
+    mpirun_options = "-x TORCH_HOME=/home/"+uname+" "
+    mpirun_options+= "-x PATH -x HOROVOD_MPI_THREADS_DISABLE=1 -x NCCL_SOCKET_IFNAME=^docker0,lo -mca btl_tcp_if_exclude lo,docker0  -mca pml ob1"
+    ##### singularity command
+    singularity_command = "singularity exec --nv"
+    user_home_mount_for_custom_enviromnent = "-H ${HOME}:"+"/home/"+uname        # final
+    #user_home_mount_for_custom_enviromnent = "-H /home/"+uname+":"+"/home/"+uname  # my custom
+    user_jobdir_mount = ""#"-B ${JOBDIR}:${JOBDIR}"                               # final
+    #user_jobdir_mount = "-B /home/jclee/automl_jclee:/${JOBDIR}"                 # my custom
+    singularity_image = "/EDISON/SCIDATA/singularity-images/userenv"
+    #
+    #running_command = ("python ${JOBDIR}/"+job_title+"_generated"+".py") if types == "python" else ("/bin/bash ${JOBDIR}/"+job_title+"_running_with_custom_env.sh")
+    running_command = "/bin/bash ${JOBDIR}/"+job_title+"_run_in_singularity_image.sh"
+    # 
+    ## JOB done @ portal
+    job_done = "## JOB done @ portal\n"
+    job_done += 'if [ ! "${error_code}" = "" ]; then\n'
+    job_done += '    echo ${error_code}\n'
+    job_done += '    echo "FAILED" > ${HOME}'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
+    job_done += '    '+register_dejob_prefix+'-d deJobId='+str(dejob_id)+' -d Status=FAILED\n'
+    job_done += 'else\n'
+    job_done += '    echo ${error_code}\n'
+    job_done += '    echo "FAILED" > ${HOME}'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
+    job_done += '    '+register_dejob_prefix+'-d deJobId='+str(dejob_id)+' -d Status=SUCCESS\n'
+    job_done += 'fi\n'
+    ##############
+    # deprecated 1130
+    #job_done+= "curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/studio-update-status "
+    #if dejob_id:
+    #   job_done+="-d deJobId="+str(dejob_id)
+    #else:
+    #    job_done+="-d deJobId=${deJobId}"
+    #job_done+=" -d Status=SUCCESS\n"
+    ##############
+    #results = prefix+paths+(job_init if 'n_tasks' not in gui_params['hpo_system_attr'] else "")+mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" " + running_command + "\n\n"+job_done
+    results = prefix+paths+job_running+mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" " + running_command \
+              + " || error_code=$?" \
+              + "\n\n"+job_done
+    # job_init can be added when gui-hpo, while jupyter-hpo exploits its own python-api _request_submit_job()
+    # auto-gen all chart when finished
+    results+= "\n## Generate charts after job done\n"
+    # runtype 1
+    #results+= "singularity exec --nv -H ${HOME}:/home/"+uname+" /EDISON/SCIDATA/singularity-images/userenv "
+    #results+= '''python -c 'from sdroptim_client import visualization as v;v.get_all_chart_html(json_file_name="'''+jobdir+os.sep+'''metadata.json", output_dir="'''+jobdir+os.sep+'''");'\n'''
+    # runtype 2
+    #results+= "singularity exec --nv -H ${HOME}:/home/"+uname+" /EDISON/SCIDATA/singularity-images/userenv "
+    #results+= '''python3 -c 'from sdroptim_client import visualization as v;v.get_all_chart_html(json_file_name="'''+jobpath+os.sep+'''metadata.json", output_dir="'''+jobpath+os.sep+'''");'\n'''
+    if liferay_v==6:
+        results+= "curl https://sdr.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/command-exec-de-job -d command='"
+    if liferay_v==7:
+        results+= "curl https://sdr7.edison.re.kr:8443/api/jsonws/SDR_base-portlet.dejob/command-exec-de-job -d command='"
+    #results+= jobpath+os.sep+"get_chart.sh'\n" ## modified @ 1123
+    results+= chart_directory+os.sep+"get_chart.sh'\n"
+    #
+    return results    
+#    
+
+def get_autofe_batch_script_old(gui_params, max_nproc_per_node, json_file_name='metadata.json', debug=False, dejob_id="", liferay_v=7):
+    jobpath, (uname, sname, job_title, wsname, job_directory) = get_jobpath_with_attr(gui_params=gui_params, job_type='autofe', debug=debug)
     ###########################
     time_deadline_sec = 3600 # default time_deadline_sec
     if 'autofe_system_attr' in gui_params:
@@ -483,8 +775,7 @@ def get_autofe_batch_script(gui_params, max_nproc_per_node, json_file_name='meta
     results = top+middle+bottom
     return results 
 
-
-def get_batch_script(gui_params, debug=False, dejob_id="", liferay_v=7):
+def get_batch_script_old(gui_params, debug=False, dejob_id="", liferay_v=7):
     jobpath, (uname, sname, job_title, wsname, job_directory) = get_jobpath_with_attr(gui_params=gui_params, debug=debug)
     ###########################
     time_deadline_sec = gui_params['hpo_system_attr']['time_deadline_sec']
@@ -641,7 +932,8 @@ def get_batch_script(gui_params, debug=False, dejob_id="", liferay_v=7):
     results+= chart_directory+os.sep+"get_chart.sh'\n"
     #
     return results    
-#    
+
+
 
 ##############################################################################################
 
