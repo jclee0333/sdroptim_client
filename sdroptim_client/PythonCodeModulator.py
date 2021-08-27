@@ -344,13 +344,6 @@ def get_jobpath_with_attr(gui_params=None, job_type='hpo',debug=False): # 202106
 
 def get_autofe_batch_script(gui_params, max_nproc_per_node, json_file_name='metadata.json', debug=False, dejob_id="", liferay_v=7):
     jobpath, (uname, sname, job_title, wsname, job_directory) = get_jobpath_with_attr(gui_params=gui_params, job_type='autofe', debug=debug)
-    json_file_name='metadata.json'
-    debug = False
-    dejob_id = ""
-    jobpath='/home/enoz/workspace/Park_Test/job/autofe-20210826162718'
-    uname='enoz'
-    wsname='Park_Test'
-    job_directory='autofe-20210826162718'
     ###########################
     time_deadline_sec = 3600 # default time_deadline_sec
     if 'autofe_system_attr' in gui_params:
