@@ -15,11 +15,11 @@ ver 0.7 @ 2020. 7. 22 - add sbatch script generator (get_batch_script())
 '''
 ### configurations n_jobs per process
 
-n_jobs = 15 # cpu jobs
+n_jobs = 15 # (half) cpu jobs 
 
 ##############################################################################
 
-import json, uuid, os, datetime, base64
+import json, uuid, os, datetime, base64, math
 
 def generate_default_searching_space_file(out_file_pathname=None, cv_flag=True):
     results  ='{\n'
@@ -367,7 +367,8 @@ def get_autofe_batch_script(gui_params, max_nproc_per_node, json_file_name='meta
     if n_tasks < max_nproc_per_node:
         n_nodes = 1
     else:
-        n_nodes = n_tasks // max_nproc_per_node
+        #n_nodes = n_tasks // max_nproc_per_node
+        n_nodes = math.ceil(n_tasks/max_nproc_per_node)
     #############################
     prefix ='#!/bin/bash\n'
     prefix+='#SBATCH --job-name='+ job_title +'\n'
@@ -652,7 +653,8 @@ def get_autofe_batch_script_old(gui_params, max_nproc_per_node, json_file_name='
     if n_tasks < max_nproc_per_node:
         n_nodes = 1
     else:
-        n_nodes = n_tasks // max_nproc_per_node
+        #n_nodes = n_tasks // max_nproc_per_node
+        n_nodes = math.ceil(n_tasks / max_nproc_per_node)
     #############################
     prefix ='#!/bin/bash\n'
     prefix+='#SBATCH --job-name='+ job_title +'\n'
