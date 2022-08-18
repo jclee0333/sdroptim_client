@@ -587,7 +587,7 @@ def get_batch_script(gui_params, debug=False, dejob_id="", liferay_v=7):
     # 
     ## JOB done @ portal
     job_done = "## JOB done @ portal\n"
-    job_done += 'if [ ! "${error_code}" = "" ]; then\n'
+    job_done += 'if [ ! "${error_code}" = 0 ]; then\n'
     job_done += '    echo ${error_code}\n'
     job_done += '    echo "FAILED" > ${HOME}'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
     job_done += '    '+register_dejob_prefix+'-d deJobId='+str(dejob_id)+' -d Status=FAILED\n'
@@ -891,7 +891,7 @@ def get_batch_script_old(gui_params, debug=False, dejob_id="", liferay_v=7):
     # 
     ## JOB done @ portal
     job_done = "## JOB done @ portal\n"
-    job_done += 'if [ ! "${error_code}" = "" ]; then\n'
+    job_done += 'if [ ! "${error_code}" = 0 ]; then\n'
     job_done += '    echo ${error_code}\n'
     job_done += '    echo "FAILED" > ${HOME}'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
     job_done += '    '+register_dejob_prefix+'-d deJobId='+str(dejob_id)+' -d Status=FAILED\n'
