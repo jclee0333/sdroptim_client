@@ -448,7 +448,7 @@ def get_autofe_batch_script(gui_params, max_nproc_per_node, json_file_name='meta
             error_code = "error_code_"+each_command.split('.py')[0].split('_')[-1].split('.sh')[0]
             res_temp = mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" "+ each_command \
                    + " || error_code=$? ; "+ error_code+"=${error_code}\n"
-            res_temp += 'if [ ! "${'+error_code+'}" = "" ]; then\n'
+            res_temp += 'if [ ! "${'+error_code+'}" = 0 ]; then\n'
             res_temp += '    echo ${'+error_code+'}\n'
             res_temp += '    echo "FAILED" > ${HOME}'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
             res_temp += '    '+register_dejob_prefix+'-d deJobId='+str(dejob_id)+' -d Status=FAILED\n'
@@ -751,7 +751,7 @@ def get_autofe_batch_script_old(gui_params, max_nproc_per_node, json_file_name='
         i = 0
         for error_code in error_code_names:
             job_done += "el" if i!=0 else ""
-            job_done += 'if [ ! "${'+error_code+'}" = "" ]; then\n'
+            job_done += 'if [ ! "${'+error_code+'}" = 0 ]; then\n'
             job_done += '    echo ${'+error_code+'}\n'
             job_done += '    echo "FAILED" > ${HOME}'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
             job_done += '    '+register_dejob_prefix+'-d deJobId='+str(dejob_id)+' -d Status=FAILED\n'
