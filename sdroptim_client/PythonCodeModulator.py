@@ -447,7 +447,7 @@ def get_autofe_batch_script(gui_params, max_nproc_per_node, json_file_name='meta
         for each_command in running_command_list:
             error_code = "error_code_"+each_command.split('.py')[0].split('_')[-1].split('.sh')[0]
             res_temp = mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" "+ each_command \
-                   + " || error_code=$? ; "+ error_code+"=${error_code}\n"
+                   + "\nerror_code=$?\n"+ error_code+"=${error_code}\n"
             res_temp += 'if [ ! "${'+error_code+'}" = 0 ]; then\n'
             res_temp += '    echo ${'+error_code+'}\n'
             res_temp += '    echo "FAILED" > ${HOME}'+'/workspace/'+str(wsname)+'/job/'+str(job_directory)+'/status\n'
@@ -607,7 +607,7 @@ def get_batch_script(gui_params, debug=False, dejob_id="", liferay_v=7):
     ##############
     #results = prefix+paths+(job_init if 'n_tasks' not in gui_params['hpo_system_attr'] else "")+mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" " + running_command + "\n\n"+job_done
     results = prefix+paths+job_running+mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" " + running_command \
-              + " || error_code=$?" \
+              + "\nerror_code=$?" \
               + "\n\n"+job_done
     # job_init can be added when gui-hpo, while jupyter-hpo exploits its own python-api _request_submit_job()
     # auto-gen all chart when finished
@@ -742,7 +742,7 @@ def get_autofe_batch_script_old(gui_params, max_nproc_per_node, json_file_name='
             #error_code_name = "error_code_"+each_command.split('.py')[0].split('_')[-1]
             error_code_name = "error_code_"+each_command.split('.py')[0].split('_')[-1].split('.sh')[0]
             res+= mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" "+ each_command \
-                   + " || error_code=$? ; "+ error_code_name+"=${error_code}\n"
+                   + "\nerror_code=$?\n"+ error_code_name+"=${error_code}\n"
             error_code_names.append(error_code_name)
         return res, error_code_names
     def get_jobdone_by_multiple_errorcode(error_code_names):
@@ -911,7 +911,7 @@ def get_batch_script_old(gui_params, debug=False, dejob_id="", liferay_v=7):
     ##############
     #results = prefix+paths+(job_init if 'n_tasks' not in gui_params['hpo_system_attr'] else "")+mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" " + running_command + "\n\n"+job_done
     results = prefix+paths+job_running+mpirun_command+ " " + mpirun_options + " " + singularity_command + " " + user_home_mount_for_custom_enviromnent+ " " + user_jobdir_mount + " " +singularity_image+" " + running_command \
-              + " || error_code=$?" \
+              + "\nerror_code=$?" \
               + "\n\n"+job_done
     # job_init can be added when gui-hpo, while jupyter-hpo exploits its own python-api _request_submit_job()
     # auto-gen all chart when finished
