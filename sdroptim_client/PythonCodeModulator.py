@@ -1527,7 +1527,6 @@ def getObjectiveFunction_(resources, gui_params, indirect=False, stepwise=False,
             if each_algorithm in ['XGBoost','LightGBM']:
                 rval_score_str = "[predicted, y_test]"
             elif each_algorithm == 'DL_Pytorch':
-                #rval_score_str = "[vs_test_loader['Predicted'], vs_test_loader['Actual']]"
                 rval_score_str = "[vs['Predicted'], vs['Actual']]"
             else:
                 rval_score_str = "[predicted, test_data[target]]"
@@ -1544,12 +1543,13 @@ def getObjectiveFunction_(resources, gui_params, indirect=False, stepwise=False,
         if 'direction' in gui_params['hpo_system_attr']:
             if gui_params['hpo_system_attr']['direction']== 'minimize':
                 direction_minimze = True
-        rval_each_algorithm = "sdroptim.retrieve_model(algorithm_name, "+model_name+", trial.number, "+rval_score_str + \
-                              ", metric = '" + perf_metric +"'" + (", label_names = label_names" if with_label_names_tag else "") + \
+        rval_each_algorithm = "final_score = sdroptim.retrieve_model(algorithm_name, "+model_name+", trial.number, "+rval_score_str + \
+                               ", metric = '" + perf_metric +"'" + \
+                              (", label_names = label_names" if with_label_names_tag else "") + \
                               ", top_n_all = "+ str(top_n_all)+", top_n_each_algo = " + str(top_n_each_algo) + \
                               (", direction = 'minimize'" if direction_minimize else "") +\
                               ")\n"
-        rval_each_algorithm+= "return "+ori_rval_score_str
+        rval_each_algorithm+= "return final_score"#+ori_rval_score_str
         #
         results = results + getIndent(rval_each_algorithm, indent_level=8)
         distribution_context = "" # refresh for another algorithm
