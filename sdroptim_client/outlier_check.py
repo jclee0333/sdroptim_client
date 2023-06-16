@@ -41,6 +41,9 @@ import missingno as msno
 
 ##############
 
+import json
+import itertools
+
 def data_loader_2d(csv_fullpath):
     try:
         ori_dataset = pd.read_csv(csv_fullpath, keep_default_na=True)
@@ -112,7 +115,16 @@ def plotting(chart_items, csv_file_name):
     outputpath = os.path.basename(csv_file_name).split('.')[0]+'_outliers.png'
     plt.savefig(outputpath)
     os.chmod(outputpath, 0o776)
-    
+
+# 다차원 배열을 리스트로 변환
+def to_list(arr):
+    if isinstance(arr, np.ndarray):
+        return arr.tolist()
+    elif isinstance(arr, list):
+        return [to_list(a) for a in arr]
+    else:
+        return arr
+
 def parallelizize_detecting_outlier_by_pool(all_parts, func, n_cores='auto'):
     if n_cores == 'auto':
         n_cores = min(int(mp.cpu_count() / 2), int(len(all_parts)))
@@ -121,11 +133,16 @@ def parallelizize_detecting_outlier_by_pool(all_parts, func, n_cores='auto'):
     res = pool.map(func, all_parts_split)
     pool.close()
     pool.join()
-    #
-    ### 20230614 parallelization bug fix by jclee
-    if len(all_parts) != len(res):
-        res = [data for inner_list in res for data in inner_list]
-    return res
+
+    # 2차원 배열은 1차원 내리고, 1차원 배열은 더해서 합치기
+    one_dimensional_array = []
+    for item in res:
+        if isinstance(item, list) and all(isinstance(subitem, list) for subitem in item):
+            one_dimensional_array.extend(item)
+        else:
+            one_dimensional_array.append(item)
+
+    return one_dimensional_array
 
 def get_voted_index_to_remove(results, frequency_thres_for_n_vote = 0.5):
     from collections import Counter
@@ -149,7 +166,7 @@ def get_voted_index_to_remove(results, frequency_thres_for_n_vote = 0.5):
         else:
             voted_index_to_remove_because_it_is_outlier.append(each[0])
     return voted_index_to_remove_because_it_is_outlier
-         
+
 
 if __name__ == '__main__':
     import argparse
@@ -172,7 +189,7 @@ if __name__ == '__main__':
         #'Cluster-based Local Outlier Factor (CBLOF)':
         #    CBLOF(contamination=outliers_fraction,
         #          check_estimator=False, random_state=random_state),
-        'Copula Based Outlier Detection (COPOD)': 
+        'Copula Based Outlier Detection (COPOD)':
         COPOD(contamination=outliers_fraction), ####
         #'Feature Bagging':### --> too slow
         #    FeatureBagging(LOF(n_neighbors=35),
@@ -232,4 +249,4 @@ if __name__ == '__main__':
         ori_dataset.iloc[voted_index_to_remove_because_it_is_outlier].to_csv(outputpath, index=False)
         os.chmod(outputpath, 0o776)
         print("Outlier detection process finished.")
-        
+
