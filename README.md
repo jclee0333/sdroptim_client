@@ -1,4 +1,3 @@
-# Korea Institute of Science Technology and Information (KISTI)
 SDROptim: Science Data Repository (SDR) hyperparameter Optimizer
 
 Create your programming code by using simple metadata (json) only!
